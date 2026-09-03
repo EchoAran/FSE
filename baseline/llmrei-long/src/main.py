@@ -1,4 +1,4 @@
-"""Main CLI entry point for SparkMe software requirements interview."""
+"""Interactive CLI entry point for LLMREI-long software requirements interview."""
 
 import argparse
 import json
@@ -9,20 +9,22 @@ root_dir = Path(__file__).resolve().parent.parent
 if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
-from src.interviewer import SparkMeInterviewer
+from src.config import InterviewConfig
+from src.interviewer import LLMREIInterviewer
 from src.models import RequirementCase
 from src.transcript import TranscriptExporter
 
 
 def main() -> None:
-    """Run interactive terminal session for software requirements elicitation."""
-    parser = argparse.ArgumentParser(description="SparkMe Requirements Elicitation CLI")
-    parser.add_argument("--input", "-i", type=str, default=None, help="Path to input JSON file containing project_name and initial_requirements")
+    """Run interactive terminal session for LLMREI-long requirements elicitation."""
+    parser = argparse.ArgumentParser(description="LLMREI-long Requirements Elicitation CLI")
+    parser.add_argument("--input", "-i", type=str, default=None, help="Path to input JSON file with project_name and initial_requirements")
     parser.add_argument("--case_id", type=str, default="CLI-CASE-001", help="Unique Case ID")
     parser.add_argument("--project_name", type=str, default="Software System", help="Name of the software project")
     parser.add_argument("--initial_requirements", type=str, default="", help="Initial requirements description")
-    parser.add_argument("--max_turns", type=int, default=None, help="Optional maximum interaction turns")
-    parser.add_argument("--output", type=str, default="output/transcript.json", help="Path to output transcript")
+    parser.add_argument("--config", "-c", type=str, default="config/default.yaml", help="Path to configuration YAML file")
+    parser.add_argument("--max_turns", type=int, default=None, help="Optional maximum interaction turns override")
+    parser.add_argument("--output", type=str, default="output/transcript.json", help="Path to output transcript JSON")
     args = parser.parse_args()
 
     case_id = args.case_id
@@ -40,18 +42,36 @@ def main() -> None:
         initial_requirements = data.get("initial_requirements", initial_requirements)
         case_id = data.get("case_id", case_id)
 
+    # Resolve config
+    config_path = Path(args.config)
+    if not config_path.is_file():
+        example_config = Path(__file__).resolve().parent.parent / "config" / "default.example.yaml"
+        if example_config.is_file():
+            config_path = example_config
+
+    config = InterviewConfig.from_yaml(config_path) if config_path.is_file() else InterviewConfig()
+    if args.max_turns is not None:
+        config.max_turns = args.max_turns
+
+    root_dir = Path(__file__).resolve().parent.parent
+    if not Path(config.prompt_path).is_absolute():
+        config.prompt_path = str(root_dir / config.prompt_path)
+
     case = RequirementCase(
         case_id=case_id,
         project_name=project_name,
         initial_requirements=initial_requirements,
     )
 
-    interviewer = SparkMeInterviewer(max_turns=args.max_turns)
+    interviewer = LLMREIInterviewer(config=config)
     interviewer.initialize(case)
 
-    print(f"=== Starting SparkMe Interview for {case.project_name} ===")
+    print(f"=== Starting LLMREI-long Interview for {case.project_name} ===")
     first_q = interviewer.get_first_question()
-    print(f"\n[Interviewer]: {first_q}")
+    if interviewer.is_finished:
+        print("\n[Interview completed]")
+    else:
+        print(f"\n[Interviewer]: {first_q}")
 
     while not interviewer.is_finished:
         try:
@@ -70,7 +90,7 @@ def main() -> None:
             break
 
     transcript = interviewer.export_transcript()
-    TranscriptExporter.save_transcript(transcript, args.output)
+    TranscriptExporter.save_json(transcript, args.output)
     print(f"\nTranscript exported to {args.output}")
 
 

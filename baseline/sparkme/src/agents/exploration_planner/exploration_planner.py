@@ -37,6 +37,8 @@ class ExplorationPlannerConfig(TypedDict, total=False):
     Only required fields are included here.
     """
     user_id: str
+    model_name: str
+    base_url: str
 
 
 class ExplorationPlanner(BaseAgent, Participant):
@@ -93,7 +95,6 @@ class ExplorationPlanner(BaseAgent, Participant):
         self.alpha = float(os.getenv("EXPLORATION_PLANNER_ALPHA", "0.5"))  # Coverage weight
         self.beta = float(os.getenv("EXPLORATION_PLANNER_BETA", "0.3"))  # Cost penalty
         self.gamma = float(os.getenv("EXPLORATION_PLANNER_GAMMA", "0.2"))  # Emergence reward
-        self.min_novelty_score = int(os.getenv("EXPLORATION_PLANNER_MIN_NOVELTY", "3"))
 
         # Strategic state (NOT loaded from file, starts fresh each session)
         session_id = interview_session.session_id

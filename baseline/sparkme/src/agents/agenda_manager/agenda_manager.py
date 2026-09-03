@@ -22,7 +22,8 @@ if TYPE_CHECKING:
 
 class AgendaManagerConfig(TypedDict, total=False):
     """Configuration for the AgendaManager agent."""
-    user_id: str
+    model_name: str
+    base_url: str
 
 
 class AgendaManager(BaseAgent, Participant):

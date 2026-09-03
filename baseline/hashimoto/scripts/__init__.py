@@ -1,0 +1,1 @@
+# Hashimoto CLI scripts package

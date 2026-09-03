@@ -9,6 +9,8 @@ import yaml
 class InterviewConfig(BaseModel):
     """Runtime configuration parameters for LLMREI-long."""
 
+    api_key: str = Field(default="", repr=False, description="API key for the OpenAI-compatible endpoint.")
+    base_url: str | None = Field(default=None, description="Optional OpenAI-compatible API base URL.")
     model: str = Field(default="gpt-4o", description="Model identifier for the LLM API.")
     temperature: float = Field(default=0.2, ge=0.0, le=2.0, description="Sampling temperature.")
     max_tokens: int = Field(default=1024, gt=0, description="Maximum response tokens per turn.")
@@ -16,6 +18,10 @@ class InterviewConfig(BaseModel):
     prompt_path: str = Field(
         default="vendor/long_prompt.txt",
         description="Path to the official long prompt text template.",
+    )
+    runs_dir: str = Field(
+        default="runs",
+        description="Directory storing session runs and execution artifacts.",
     )
 
     @classmethod

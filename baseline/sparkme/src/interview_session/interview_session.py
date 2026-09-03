@@ -2,7 +2,7 @@
 
 import asyncio
 import copy
-from datetime import datetime, timedelta
+from datetime import datetime
 import os
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -21,7 +21,6 @@ from src.agents.exploration_planner.exploration_planner import (
 from src.agents.interviewer.interviewer import (
     Interviewer,
     InterviewerConfig,
-    TTSConfig,
 )
 from src.content.memory_bank.memory import Memory
 from src.content.memory_bank.memory_bank_vector_db import VectorMemoryBank
@@ -43,7 +42,7 @@ class InterviewSession:
         interview_description: str = "Software Requirements Elicitation",
         interview_plan_path: Optional[str] = None,
         initial_context: Optional[str] = None,
-        max_turns: Optional[int] = 20,
+        max_turns: Optional[int] = None,
     ) -> None:
         """Initialize the interview session and all collaborating agents."""
         self.user_id = user_id
@@ -93,23 +92,19 @@ class InterviewSession:
         self._user_message_count = 0
         self._last_message_time = datetime.now()
         self._last_user_message: Optional[Message] = None
-        self.timeout_minutes = int(os.getenv("SESSION_TIMEOUT_MINUTES", "10"))
-
         # User participant
         self.user = User(user_id=self.user_id, interview_session=self)
 
         # Agent 1: Interviewer
         self._interviewer = Interviewer(
             config=InterviewerConfig(
-                user_id=self.user_id,
-                tts=TTSConfig(enabled=False),
                 interview_description=self._interview_description,
             ),
             interview_session=self,
         )
 
         # Agent 2: Agenda Manager
-        scribe_config = AgendaManagerConfig(user_id=self.user_id)
+        scribe_config = AgendaManagerConfig()
         scribe_model = os.getenv("AGENDA_MANAGER_MODEL_NAME")
         if scribe_model:
             scribe_config["model_name"] = scribe_model
@@ -125,13 +120,6 @@ class InterviewSession:
         # Agent 3: Exploration Planner
         planner_config = ExplorationPlannerConfig(
             user_id=self.user_id,
-            turn_trigger=int(os.getenv("EXPLORATION_PLANNER_TURN_TRIGGER", "3")),
-            num_rollouts=int(os.getenv("EXPLORATION_PLANNER_NUM_ROLLOUTS", "3")),
-            rollout_horizon=int(os.getenv("EXPLORATION_PLANNER_ROLLOUT_HORIZON", "3")),
-            max_strategic_questions=int(os.getenv("EXPLORATION_PLANNER_MAX_QUESTIONS", "5")),
-            alpha=float(os.getenv("EXPLORATION_PLANNER_ALPHA", "0.5")),
-            beta=float(os.getenv("EXPLORATION_PLANNER_BETA", "0.3")),
-            gamma=float(os.getenv("EXPLORATION_PLANNER_GAMMA", "0.2")),
         )
         planner_model = os.getenv("EXPLORATION_PLANNER_MODEL_NAME")
         if planner_model:

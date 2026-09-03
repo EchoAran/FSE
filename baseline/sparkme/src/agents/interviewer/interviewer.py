@@ -1,4 +1,3 @@
-import os
 import re
 from typing import TYPE_CHECKING, TypedDict
 
@@ -20,18 +19,11 @@ if TYPE_CHECKING:
 
 
 
-class TTSConfig(TypedDict, total=False):
-    """Configuration for text-to-speech."""
-    enabled: bool
-    provider: str  # e.g. 'openai'
-    voice: str     # e.g. 'alloy'
-
-
 class InterviewerConfig(TypedDict, total=False):
     """Configuration for the Interviewer agent."""
-    user_id: str
-    tts: TTSConfig
     interview_description: str
+    model_name: str
+    base_url: str
 
 
 class Interviewer(BaseAgent, Participant):
@@ -50,9 +42,6 @@ class Interviewer(BaseAgent, Participant):
         self.tools = {
             "recall": Recall(memory_bank=self.interview_session.memory_bank),
             "respond_to_user": RespondToUser(
-                tts_config=config.get("tts", {}),
-                base_path= \
-                    f"{os.getenv('DATA_DIR', 'data')}/{config.get('user_id')}/",
                 on_response=self._handle_response,
                 on_turn_complete=lambda: setattr(
                     self, '_turn_to_respond', False)

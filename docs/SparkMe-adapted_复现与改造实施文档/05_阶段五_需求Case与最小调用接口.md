@@ -79,7 +79,7 @@ Agenda、notes、coverage、emergent subtopics 和 strategic state 是方法内�
 - 使用的模型与 Embedding backend；
 - Topic Guide 和 context 路径；
 - planner 触发频率、rollout 数、horizon 和 utility 权重；
-- 会话长度或结束策略；
+- 可选的会话长度上限；默认不设 turn cap，由官方 topic completion 或用户结束会话；
 - 正常运行所需目录。
 
 删除论文实验模式、baseline 模式、模拟用户 profile 路径和离线评价配置。不要为了“可追溯”额外保存每场访谈配置副本。

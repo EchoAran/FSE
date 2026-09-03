@@ -30,7 +30,10 @@ class HashimotoInterviewer:
     ) -> None:
         """Initialize interviewer with configuration, LLM client, and prompt loader."""
         self.config = config or InterviewConfig()
-        self.llm_client = llm_client or OpenAIClient()
+        self.llm_client = llm_client or OpenAIClient(
+            api_key=self.config.api_key or None,
+            base_url=self.config.base_url or None,
+        )
         self.prompt_loader = prompt_loader or PromptLoader()
 
         slot_filling_prompt = self.prompt_loader.load_prompt("slot_filling.txt", self.config.prompts_dir)
@@ -228,6 +231,11 @@ class HashimotoInterviewer:
         case: RequirementCase | None = None,
     ) -> None:
         """Losslessly restore session state, slot values, and abduction history from checkpoint."""
+        if checkpoint.is_finished:
+            raise RuntimeError("Completed interviews cannot be resumed.")
+        if not checkpoint.pending_question:
+            raise RuntimeError("Unfinished interview has no pending question and cannot be resumed.")
+
         target_case = case or RequirementCase(
             case_id=checkpoint.case_id,
             project_name=checkpoint.project_name,

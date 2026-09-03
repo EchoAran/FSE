@@ -1,7 +1,7 @@
 """Interviewer tool definitions for dispatching responses to the user."""
 
 import asyncio
-from typing import Any, Callable, Dict, Optional, Type
+from typing import Any, Callable, Optional, Type
 from langchain_core.callbacks.manager import CallbackManagerForToolRun
 from langchain_core.tools import BaseTool
 from pydantic import BaseModel, Field, SkipValidation
@@ -21,8 +21,6 @@ class RespondToUser(BaseTool):
     description: str = "A tool for responding to the user."
     args_schema: Type[BaseModel] = ResponseToUserInput
 
-    tts_config: Dict = Field(default_factory=dict)
-    base_path: str = Field(...)
     on_response: SkipValidation[Callable[[str, str], Any]] = Field(
         description="Callback function to be called when responding to user"
     )

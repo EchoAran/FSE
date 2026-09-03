@@ -8,6 +8,9 @@ from src.prompt.loader import PromptLoader
 from src.prompt.renderer import PromptRenderer
 
 
+INTERVIEW_FINISHED_MARKER = "[[INTERVIEW_FINISHED]]"
+
+
 class LLMREIInterviewer:
     """Orchestrates an end-to-end requirements elicitation interview using LLMREI-long."""
 
@@ -19,7 +22,10 @@ class LLMREIInterviewer:
     ) -> None:
         """Initialize the interviewer with configuration, LLM client, and prompt loader."""
         self.config = config or InterviewConfig()
-        self.llm_client = llm_client or OpenAIClient()
+        self.llm_client = llm_client or OpenAIClient(
+            api_key=self.config.api_key or None,
+            base_url=self.config.base_url or None,
+        )
         self.prompt_loader = prompt_loader or PromptLoader()
 
         self._case: RequirementCase | None = None
@@ -81,7 +87,14 @@ class LLMREIInterviewer:
             model=self.config.model,
             temperature=self.config.temperature,
             max_tokens=self.config.max_tokens,
-        )
+        ).strip()
+
+        if not first_question:
+            raise RuntimeError("LLM returned an empty interviewer response.")
+
+        if first_question == INTERVIEW_FINISHED_MARKER:
+            self._is_finished = True
+            return ""
 
         self._pending_interviewer_utterance = first_question
         self._messages.append(Message(role="assistant", content=first_question))
@@ -124,10 +137,13 @@ class LLMREIInterviewer:
             model=self.config.model,
             temperature=self.config.temperature,
             max_tokens=self.config.max_tokens,
-        )
+        ).strip()
+
+        if not next_question:
+            raise RuntimeError("LLM returned an empty interviewer response.")
 
         # Commit state only upon successful generation
-        self._messages = candidate_messages + [Message(role="assistant", content=next_question)]
+        self._messages = candidate_messages
         self._current_turn_index = candidate_turn_id
         turn = InterviewTurn(
             turn_id=self._current_turn_index,
@@ -135,6 +151,13 @@ class LLMREIInterviewer:
             interviewee_utterance=interviewee_answer,
         )
         self._turns.append(turn)
+
+        if next_question == INTERVIEW_FINISHED_MARKER:
+            self._is_finished = True
+            self._pending_interviewer_utterance = None
+            return ""
+
+        self._messages.append(Message(role="assistant", content=next_question))
         self._pending_interviewer_utterance = next_question
 
         return next_question
@@ -145,6 +168,11 @@ class LLMREIInterviewer:
         case: RequirementCase | None = None,
     ) -> None:
         """Losslessly restore interviewer state, context, and pending question from transcript."""
+        if transcript.is_finished:
+            raise RuntimeError("Completed interviews cannot be resumed.")
+        if not transcript.pending_question:
+            raise RuntimeError("Unfinished interview has no pending question and cannot be resumed.")
+
         target_case = case or RequirementCase(
             case_id=transcript.case_id,
             project_name=transcript.project_name,

@@ -1,7 +1,12 @@
 """SparkMe requirements engineering interview coordinator and public interface."""
 
 import asyncio
+from pathlib import Path
 from typing import Optional
+
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 
 from src.interview_session.interview_session import InterviewSession
 from src.models import InterviewTranscript, RequirementCase
@@ -13,7 +18,7 @@ class SparkMeInterviewer:
     def __init__(
         self,
         topics_plan_path: Optional[str] = None,
-        max_turns: int = 20,
+        max_turns: Optional[int] = None,
     ) -> None:
         """Initialize the SparkMe interviewer interface."""
         self.topics_plan_path = topics_plan_path
