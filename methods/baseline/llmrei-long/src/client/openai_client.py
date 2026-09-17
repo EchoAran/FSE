@@ -6,6 +6,20 @@ from src.client.base import BaseLLMClient
 from src.models import Message
 
 
+# Families that keep the system prompt in a separate top-level field and therefore
+# reject a conversation that has no user turn.
+_USER_TURN_REQUIRED_FAMILIES = ("claude", "gemini", "glm")
+
+
+def ensure_user_turn(payload: list[dict[str, str]], model: str) -> list[dict[str, str]]:
+    """Promote a system-only conversation to a single user turn for families requiring one."""
+    if any(msg["role"] != "system" for msg in payload):
+        return payload
+    if not any(family in model.lower() for family in _USER_TURN_REQUIRED_FAMILIES):
+        return payload
+    return [{"role": "user", "content": msg["content"]} for msg in payload]
+
+
 class OpenAIClient(BaseLLMClient):
     """Client implementing inference against OpenAI or compatible REST endpoints."""
 
@@ -57,10 +71,10 @@ class OpenAIClient(BaseLLMClient):
     ) -> str:
         """Send chat messages and return the assistant response."""
         client = self._get_client()
-        payload = [
-            {"role": msg.role, "content": msg.content}
-            for msg in messages
-        ]
+        payload = ensure_user_turn(
+            [{"role": msg.role, "content": msg.content} for msg in messages],
+            model,
+        )
 
         response = client.chat.completions.create(
             model=model,
