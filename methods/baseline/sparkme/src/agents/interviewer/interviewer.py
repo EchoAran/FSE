@@ -43,8 +43,7 @@ class Interviewer(BaseAgent, Participant):
             "recall": Recall(memory_bank=self.interview_session.memory_bank),
             "respond_to_user": RespondToUser(
                 on_response=self._handle_response,
-                on_turn_complete=lambda: setattr(
-                    self, '_turn_to_respond', False)
+                on_turn_complete=self._handle_turn_complete,
             ),
         }
 
@@ -67,6 +66,10 @@ class Interviewer(BaseAgent, Participant):
                        content=response)
 
         return response
+
+    async def _handle_turn_complete(self) -> None:
+        """Mark the current turn as complete so the interview loop stops."""
+        self._turn_to_respond = False
 
     async def on_message(self, message: Message):
 

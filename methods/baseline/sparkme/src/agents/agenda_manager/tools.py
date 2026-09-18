@@ -142,6 +142,24 @@ class UpdateMemoryBankAndSessionInput(BaseModel):
 
         return v
 
+    @field_validator('metadata', mode='before')
+    @classmethod
+    def parse_metadata(cls, v):
+        """Parse metadata from a JSON object string to a dictionary."""
+        if isinstance(v, str):
+            v = v.strip()
+            if not v:
+                return {}
+            try:
+                v = json.loads(v)
+            except json.JSONDecodeError:
+                try:
+                    v, _ = json.JSONDecoder().raw_decode(v)
+                except json.JSONDecodeError:
+                    return {}
+        return v if isinstance(v, dict) else {}
+
+
 class UpdateMemoryBankAndSession(BaseTool):
     """Tool for updating the memory bank and session agenda."""
     name: str = "update_memory_bank_and_session"
