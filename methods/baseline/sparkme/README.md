@@ -91,7 +91,7 @@ From the `baseline/sparkme` directory, create the local environment file:
 Copy-Item .env.example .env
 ```
 
-On macOS/Linux, use `cp .env.example .env`. At minimum, set `OPENAI_API_KEY`, `MODEL_NAME`, and—when using an OpenAI-compatible service—`OPENAI_BASE_URL` in `.env`. `AGENDA_MANAGER_MODEL_NAME` and `EXPLORATION_PLANNER_MODEL_NAME` may select dedicated models for those agents; the remaining optional provider settings are documented in `.env.example`.
+On macOS/Linux, use `cp .env.example .env`. At minimum, set `OPENAI_API_KEY`, `MODEL_NAME`, and—when using an OpenAI-compatible service—`OPENAI_BASE_URL` in `.env`. `TEMPERATURE` and `MAX_OUTPUT_TOKENS` control sampling for all agents (`0.0` and `8192` by default); the remaining settings are documented in `.env.example`.
 
 `.env.example` is safe to commit because it contains no credentials. The local `.env` is loaded automatically by both the programmatic API and CLI, is ignored by Git, and must never be committed.
 

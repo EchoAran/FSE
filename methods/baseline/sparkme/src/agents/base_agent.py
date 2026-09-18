@@ -42,7 +42,9 @@ class BaseAgent:
         self.engine = get_engine(model_name= \
                                  config.get("model_name",
                                             os.getenv("MODEL_NAME", "gpt-4.1-mini")),
-                                 base_url=config.get("base_url") or os.getenv("OPENAI_BASE_URL"))
+                                 base_url=config.get("base_url") or os.getenv("OPENAI_BASE_URL"),
+                                 temperature=float(os.getenv("TEMPERATURE", "0.0")),
+                                 max_output_tokens=int(os.getenv("MAX_OUTPUT_TOKENS", "8192")))
         self.tools = {}
 
         # Each agent has an event stream.
