@@ -181,7 +181,12 @@ class Interviewer(BaseAgent, Participant):
 
             # Remove STRATEGIC_QUESTIONS section from template if stale
             if not self._should_include_strategic_questions():
-                main_prompt = main_prompt.replace("\n{STRATEGIC_QUESTIONS}\n", "\n")
+                main_prompt = re.sub(
+                    r"\n*<strategic_questions>.*?</strategic_questions>\n*",
+                    "\n",
+                    main_prompt,
+                    flags=re.DOTALL,
+                )
 
         return format_prompt(main_prompt, format_params)
 

@@ -61,9 +61,14 @@ class BaseAgent:
 
     def _call_engine(self, prompt: str):
         '''Calls the LLM engine with the given prompt.'''
+        last_error = None
         for attempt in range(3):
             try:
                 response = invoke_engine(self.engine, prompt)
+
+                # An empty completion means the engine call failed
+                if not response.content.strip():
+                    raise ValueError("The engine returned an empty completion.")
 
                 # Track token usage if tracker is available
                 if BaseAgent.token_tracker is not None:
@@ -87,6 +92,7 @@ class BaseAgent:
 
                 return response.content
             except Exception as e:
+                last_error = e
                 # Calculate exponential backoff sleep time (1s, 2s, 4s, 8s, etc.)
                 sleep_time = 2 ** attempt
                 SessionLogger.log_to_file(
@@ -98,7 +104,7 @@ class BaseAgent:
                 )
                 time.sleep(sleep_time)
 
-        raise e
+        raise last_error
     
     async def call_engine_async(self, prompt: str) -> str:
         '''Asynchronously call the LLM engine with the given prompt.'''
