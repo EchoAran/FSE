@@ -21,26 +21,49 @@ class QuestionGenerator:
         if code_block:
             cleaned = code_block.group(1).strip()
 
-        try:
-            parsed = json.loads(cleaned)
-            if isinstance(parsed, dict):
-                raw_target = parsed.get("Target Slot S") or parsed.get("target_slot") or parsed.get("target_slots")
-                target_slots: list[str] = []
+        candidates = [cleaned]
+        json_match = re.search(r"(\{[\s\S]*\})", cleaned)
+        if json_match and json_match.group(1) != cleaned:
+            candidates.append(json_match.group(1).strip())
 
-                if isinstance(raw_target, dict):
-                    target_slots = [str(k).strip() for k in raw_target.keys() if str(k).strip()]
-                elif isinstance(raw_target, list):
-                    target_slots = [str(item).strip() for item in raw_target if str(item).strip()]
-                elif isinstance(raw_target, str) and raw_target.strip():
-                    target_slots = [raw_target.strip()]
+        for text_to_try in candidates:
+            try:
+                parsed = json.loads(text_to_try)
+                if isinstance(parsed, dict):
+                    raw_target = (
+                        parsed.get("Target Slot S")
+                        or parsed.get("target_slot")
+                        or parsed.get("target_slots")
+                        or parsed.get("Target Slot")
+                    )
+                    target_slots: list[str] = []
 
-                q_val = parsed.get("Question") or parsed.get("question")
-                if q_val:
-                    return target_slots, str(q_val).strip()
-        except (json.JSONDecodeError, TypeError):
-            pass
+                    if isinstance(raw_target, dict):
+                        target_slots = [str(k).strip() for k in raw_target.keys() if str(k).strip()]
+                    elif isinstance(raw_target, list):
+                        for item in raw_target:
+                            if isinstance(item, dict):
+                                name = item.get("name") or item.get("slot") or item.get("slot_name")
+                                if name:
+                                    target_slots.append(str(name).strip())
+                            elif str(item).strip():
+                                target_slots.append(str(item).strip())
+                    elif isinstance(raw_target, str) and raw_target.strip():
+                        target_slots = [raw_target.strip()]
+
+                    q_val = (
+                        parsed.get("Question")
+                        or parsed.get("question")
+                        or parsed.get("interview_question")
+                        or parsed.get("formulated_question")
+                    )
+                    if q_val:
+                        return target_slots, str(q_val).strip()
+            except (json.JSONDecodeError, TypeError):
+                continue
 
         return [], cleaned.strip('"').strip("'")
+
 
     def generate_question(
         self,
