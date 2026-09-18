@@ -1,6 +1,7 @@
 """XML serialization and parsing utilities for LLM tool calls."""
 
 import ast
+import html
 import json
 import re
 from typing import Any, Dict, List, Type
@@ -99,6 +100,44 @@ def _parse_xml_node(element: ET.Element) -> Any:
     return result_dict
 
 
+TOOL_CALL_TAG_PATTERN = re.compile(r"<(/?)([A-Za-z_][\w.-]*)\s*(/?)>")
+
+
+def _parse_xml_tolerant(xml_string: str) -> ET.Element:
+    """Parse XML into an Element tree, tolerating unbalanced tags.
+
+    LLM-generated tool calls occasionally drop or add a closing tag, which an
+    ElementTree parse rejects outright; such a slip should not abort the
+    session, so tags left open are closed implicitly by their parent's end tag.
+    """
+    root = ET.Element("tool_calls")
+    stack = [root]
+    cursor = 0
+
+    for match in TOOL_CALL_TAG_PATTERN.finditer(xml_string):
+        text = xml_string[cursor:match.start()]
+        if text:
+            stack[-1].text = (stack[-1].text or "") + html.unescape(text)
+        cursor = match.end()
+
+        closing, tag, self_closing = match.group(1), match.group(2), match.group(3)
+        if self_closing:
+            ET.SubElement(stack[-1], tag)
+        elif closing:
+            for index in range(len(stack) - 1, 0, -1):
+                if stack[index].tag == tag:
+                    del stack[index:]
+                    break
+        elif tag != root.tag or len(stack) > 1:
+            stack.append(ET.SubElement(stack[-1], tag))
+
+    text = xml_string[cursor:]
+    if text:
+        stack[-1].text = (stack[-1].text or "") + html.unescape(text)
+
+    return root
+
+
 def parse_tool_calls(xml_string: str) -> List[Dict[str, Any]]:
     """Parse XML tool calls with support for nested tags and entity escaping."""
     xml_string = xml_string.replace("&", "&amp;")
@@ -112,7 +151,7 @@ def parse_tool_calls(xml_string: str) -> List[Dict[str, Any]]:
 
     xml_string = re.sub(r"<response>(.*?)</response>", escape_response_content, xml_string, flags=re.DOTALL)
 
-    root = ET.fromstring(xml_string)
+    root = _parse_xml_tolerant(xml_string)
     result = []
 
     for tool_element in root:
