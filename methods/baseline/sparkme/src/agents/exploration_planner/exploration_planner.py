@@ -159,8 +159,8 @@ class ExplorationPlanner(BaseAgent, Participant):
                 "execution_log",
                 f"[NOTIFY] ({self.name}) Triggering strategic planning at turn {current_turn}"
             )
-            # Run planning
-            await self._run_strategic_planning()
+            # Run planning in background (non-blocking)
+            asyncio.create_task(self._run_strategic_planning())
 
     def _should_trigger_planning(self, current_turn: int) -> bool:
         """

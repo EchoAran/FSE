@@ -92,7 +92,8 @@ class LLMREIInterviewer:
         if not first_question:
             raise RuntimeError("LLM returned an empty interviewer response.")
 
-        if first_question == INTERVIEW_FINISHED_MARKER:
+        # The model may wrap the marker in a closing remark, so match it anywhere in the utterance
+        if INTERVIEW_FINISHED_MARKER in first_question:
             self._is_finished = True
             return ""
 
@@ -152,7 +153,7 @@ class LLMREIInterviewer:
         )
         self._turns.append(turn)
 
-        if next_question == INTERVIEW_FINISHED_MARKER:
+        if INTERVIEW_FINISHED_MARKER in next_question:
             self._is_finished = True
             self._pending_interviewer_utterance = None
             return ""
@@ -189,6 +190,12 @@ class LLMREIInterviewer:
             self._messages.append(Message(role="user", content=turn.interviewee_utterance))
 
         self._is_finished = transcript.is_finished
+
+        # A persisted utterance carrying the marker is a terminal one and must not be replayed as a question
+        if transcript.pending_question and INTERVIEW_FINISHED_MARKER in transcript.pending_question:
+            self._is_finished = True
+            self._pending_interviewer_utterance = None
+            return
 
         # Restore pending question without re-calling LLM
         if not self._is_finished and transcript.pending_question:

@@ -62,11 +62,11 @@ class BaseAgent:
     def _call_engine(self, prompt: str):
         '''Calls the LLM engine with the given prompt.'''
         last_error = None
-        for attempt in range(3):
+        for attempt in range(5):
             try:
                 response = invoke_engine(self.engine, prompt)
 
-                # An empty completion means the engine call failed
+                # An empty completion is a transient engine degeneration, so retry it
                 if not response.content.strip():
                     raise ValueError("The engine returned an empty completion.")
 
