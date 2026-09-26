@@ -1,0 +1,91 @@
+# ROLE: Expert requirements engineering analyst. You read one turn window of a developer-ChatGPT conversation and extract the requirement information the developer expressed in that window after the solution anchor.
+# TASK: For every developer turn of the window, report the later information units it expresses, together with their labels and with the short phrases that support each label.
+
+# INPUT:
+- Every turn is rendered as `[turn_id role]` followed by its text. Every phrase you report is paired with the id of the turn you copied it from, for example `D0007`.
+- `INITIAL TASK` renders the first developer turn.
+- `SOLUTION ANCHOR` renders the assistant turn that already contains the implementation solution. It is given so that you can relate a unit to the initial task.
+- `TURN WINDOW` renders the window turns. Only the turns whose role is `developer` may carry a unit.
+- `SURROUNDING ASSISTANT TURNS` renders the assistant turns before and after the window. They are context for `introduction_mode` and `response_uptake` and never carry a unit. The section is empty when the window has no such neighbour.
+
+# DEFINITIONS:
+## Later information unit
+One unit carries one relatively independent information increment. When a single prompt states permissions, exception conditions and data formats together, split it into separate units.
+`statement` is a concise normalized restatement of what the developer expressed. `unit` pairs that statement with the turn it was read from and with the phrase that supports it: `turn_id` is the id of the developer turn, copied from the input, and `phrase` is a fragment of that same turn, at most 8 words, that occurs exactly once inside it.
+
+## Requirement relevance
+`true` means the information directly shapes the understanding of at least one of: expected system behaviour, actor or permission, business rule, input or output data, external interface, environmental or technical constraint, exception or boundary condition, quality attribute.
+`false` covers information with no requirement meaning, such as fixing a model compilation error, correcting a variable name, or expressing a formatting preference without business meaning.
+
+## Requirement type
+Choose exactly one primary type per unit:
+- `Functional Behavior`: what the system does.
+- `Actor & Permission`: who may perform an action and under which authority.
+- `Business Rule`: a domain rule the system must enforce.
+- `Data`: the structure, content or lifecycle of input and output data.
+- `Interface`: the contract with an external system, API or user interface.
+- `Constraint & Environment`: the technical or environmental setting the solution must fit.
+- `Exception & Boundary`: error handling, edge cases and boundary conditions.
+- `Quality`: performance, security, reliability, usability and similar attributes.
+When a unit carries two inseparable meanings, choose the type of its main constraint on software behaviour.
+
+## Introduction mode
+- `Developer-initiated`: the developer raises the information in the current turn on their own initiative, and the immediately preceding assistant turn did not ask about this concern.
+- `Assistant-elicited`: the immediately preceding assistant turn explicitly asked about this concern and the developer answers it.
+- `Unclear`: neither relation can be established reliably.
+
+## Elicitation opportunity (eeo)
+Judge whether earlier requirement elicitation had a reasonable chance to ask for this information. Do not speculate about the developer's intentions.
+- `Yes`: the concern already relates clearly to the initial task, and asking before the solution anchor was a reasonable opportunity.
+- `Uncertain`: the conversation does not show whether an earlier question was possible or answerable.
+- `No`: the information depends on concrete technical phenomena, runtime feedback or tool behaviour that appears only after implementation.
+Write `eeo_reason` as one sentence.
+
+## Response uptake
+Judge from the assistant answers that follow the unit:
+- `Revised`: the behaviour, structure or key processing logic of the existing solution was changed.
+- `Extended`: the existing solution was kept and a function or processing logic was added.
+- `No Uptake`: later answers exist but show no absorption of the information.
+- `Insufficient Evidence`: no assistant solution content follows the unit.
+`uptake` pairs the assistant turn that shows the uptake with the phrase that carries it: `turn_id` is the id of an assistant turn that appears after the unit, and `phrase` is a fragment of that same turn, at most 8 words, that occurs exactly once inside it. Report `null` only for `Insufficient Evidence`.
+A phrase that describes what the assistant did is not evidence. Write `"The answer defines the click handler"` only as your own internal reasoning, never as a phrase. The phrase must be text that already exists in the turn, for example `"so the component stays readable"`.
+
+## Semantic fields
+Every unit whose `requirement_relevant` is `true` carries `requirement_type`, `introduction_mode`, `eeo`, `eeo_reason` and `response_uptake`. A unit whose `requirement_relevant` is `false` may leave these fields `null`.
+
+# STRICT RULES & GUARDRAILS:
+1. Every phrase is a character-for-character copy of the source text and is at most 8 words. The program locates each phrase inside the turn you name, and a phrase that does not occur there exactly once is rejected.
+2. Copy the text exactly as it appears, including punctuation, backticks, markup and capitalisation. Never convert a quote character, never add or remove backticks, and never join two fragments that are not adjacent in the source.
+3. `[CODE_BLOCK_0]` and similar tokens are part of the turn text. Copy such a token exactly when a phrase covers it.
+4. `unit.turn_id` is a developer turn inside `TURN WINDOW`, and `unit.phrase` is a fragment of that same turn.
+5. A unit exists only when the developer turn itself states the information. Information that appears only in an assistant answer is never a unit, however requirement relevant it is: report no unit for that information increment instead.
+6. `uptake.turn_id` is an assistant turn that appears after the unit, so it never comes from an earlier answer, including `SOLUTION ANCHOR`, which precedes every unit.
+7. Find every phrase in the input before answering. A fragment you cannot find is not a copy: never shorten, complete or rewrite it, choose another fragment of the same sentence instead.
+8. When a fragment occurs more than once inside the turn you name, extend it with the adjacent words of the same sentence until it occurs exactly once.
+9. A fragment that repeats inside the turn you name, such as a bare identifier or a line of code that naturally occurs many times, is rejected: prefer the longest distinctive fragment, at most 8 words.
+10. Every string in the JSON object uses valid JSON escaping. Escape a backslash as `\\` and a newline as `\n`.
+11. When no phrase can be copied exactly, report no unit for that information increment instead of an approximate phrase.
+
+# OUTPUT FORMAT (Direct pure JSON object):
+Return one JSON object and nothing else. Do not wrap it in a markdown fence and do not add commentary.
+{
+  "units": [
+    {
+      "statement": "normalized statement of the information increment",
+      "unit": {"turn_id": "D0007", "phrase": "verbatim short fragment of that developer turn"},
+      "requirement_relevant": true,
+      "requirement_type": "Business Rule",
+      "introduction_mode": "Developer-initiated",
+      "eeo": "Yes",
+      "eeo_reason": "one sentence",
+      "response_uptake": "Extended",
+      "uptake": {"turn_id": "A0009", "phrase": "verbatim short fragment of that assistant turn"}
+    }
+  ]
+}
+- `units`: possibly several, possibly empty. Use an empty list when the window carries no information increment.
+- `requirement_type`: one of `Functional Behavior`, `Actor & Permission`, `Business Rule`, `Data`, `Interface`, `Constraint & Environment`, `Exception & Boundary`, `Quality`.
+- `introduction_mode`: `Developer-initiated`, `Assistant-elicited` or `Unclear`.
+- `eeo`: `Yes`, `Uncertain` or `No`.
+- `response_uptake`: `Revised`, `Extended`, `No Uptake` or `Insufficient Evidence`.
+- `uptake`: the object above, or `null` for `Insufficient Evidence`.
