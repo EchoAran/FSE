@@ -12,6 +12,7 @@ from interview.adapters.base import AdapterResult, BaseMethodAdapter
 from interview.adapters.registry import get_method_descriptor
 from interview.adapters.worker_protocol import WorkerCommand, WorkerResponse
 from interview.cases.models import CaseRecord
+from interview.storage.token_usage import TokenUsage
 
 
 class ProcessWorkerClient(BaseMethodAdapter):
@@ -144,6 +145,14 @@ class ProcessWorkerClient(BaseMethodAdapter):
         if not resp.success:
             raise RuntimeError(f"Worker failed on 'resume': {resp.error}\n{resp.traceback or ''}")
         return AdapterResult.from_dict(resp.data or {})
+
+    def token_usage(self) -> TokenUsage:
+        """Fetch the method's cumulative token usage for all LLM calls so far."""
+        cmd = WorkerCommand(cmd="token_usage")
+        resp = self._send_command(cmd)
+        if not resp.success:
+            raise RuntimeError(f"Worker failed on 'token_usage': {resp.error}\n{resp.traceback or ''}")
+        return TokenUsage.from_dict(resp.data or {})
 
     def close(self) -> None:
         """Terminate worker process cleanly."""

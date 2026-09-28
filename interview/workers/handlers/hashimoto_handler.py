@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from interview.workers.handlers.base_handler import BaseMethodHandler
+from interview.workers.handlers.base_handler import BaseMethodHandler, read_llm_call_totals
 
 
 class HashimotoHandler(BaseMethodHandler):
@@ -119,3 +119,7 @@ class HashimotoHandler(BaseMethodHandler):
             "turn_count": self.interviewer.turn_count,
             "finish_message": None,
         }
+
+    def token_usage(self) -> Dict[str, int]:
+        """Return cumulative token usage recorded in the method's LLM call log."""
+        return read_llm_call_totals(self.native_dir / self.case_id / "llm_calls.jsonl")

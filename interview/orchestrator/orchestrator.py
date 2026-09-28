@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 from typing import Optional, Union
 
+from interview.adapters.base import BaseMethodAdapter
 from interview.adapters.registry import get_method_descriptor
 from interview.adapters.worker_client import ProcessWorkerClient
 from interview.cases.loader import CaseLoader
@@ -15,6 +16,7 @@ from interview.storage.conversation import ConversationLogger
 from interview.storage.manifest import ManifestManager
 from interview.storage.models import InterviewManifest, InterviewStatus, PendingAnswer
 from interview.storage.pending_store import PendingAnswerStore
+from interview.storage.token_usage import TokenUsageLog
 
 
 class InterviewOrchestrator:
@@ -64,6 +66,10 @@ class InterviewOrchestrator:
         self.results_root = Path(results_root).resolve() if results_root else (self.project_root / "results")
         self.results_dir = (self.results_root / self.method_id / self.case.case_id).resolve()
         self.native_dir = self.results_dir / "native"
+
+    def _sync_token_usage(self, adapter: BaseMethodAdapter, turn_count: int) -> None:
+        """Record per-turn method token usage up to the completed turn count."""
+        TokenUsageLog.sync(self.results_dir, turn_count, adapter.token_usage())
 
     def run(self, interactive: bool = False) -> InterviewManifest:
         """Execute or resume interview session until completion or interruption."""
@@ -133,6 +139,7 @@ class InterviewOrchestrator:
                     case=self.case,
                 )
                 manifest = ManifestManager.load(self.results_dir)
+                self._sync_token_usage(adapter, completed_turns)
             else:
                 start_result = adapter.start(self.case)
                 current_q = start_result.question
@@ -154,6 +161,7 @@ class InterviewOrchestrator:
                             role="interviewer",
                             content=current_q,
                         )
+                    self._sync_token_usage(adapter, completed_turns)
                     ManifestManager.save(self.results_dir, manifest)
                     print(f"\n=======================================================")
                     print(f" Interview Completed Immediately: {self.method_id} x {self.case.case_id}")
@@ -173,6 +181,7 @@ class InterviewOrchestrator:
                 )
                 manifest.status = InterviewStatus.INITIALIZED
                 manifest.completed_turns = completed_turns
+                self._sync_token_usage(adapter, completed_turns)
                 ManifestManager.save(self.results_dir, manifest)
 
             print(f"\n=======================================================")
@@ -254,6 +263,7 @@ class InterviewOrchestrator:
                     print(f"\n[Interview Completed]: {manifest.finish_message}")
 
                 # Clear pending answer and update manifest
+                self._sync_token_usage(adapter, completed_turns)
                 PendingAnswerStore.delete(self.results_dir)
                 ManifestManager.save(self.results_dir, manifest)
 

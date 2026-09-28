@@ -126,3 +126,12 @@ class SparkMeHandler(BaseMethodHandler):
             "SparkMe session is maintained in-memory and cannot be losslessly resumed "
             "after worker process termination. Mark run as interrupted."
         )
+
+    def token_usage(self) -> Dict[str, int]:
+        """Return cumulative token usage tracked by the in-memory interview session."""
+        tracker = self.interviewer.session.token_tracker
+        return {
+            "prompt_tokens": tracker.total_prompt_tokens,
+            "completion_tokens": tracker.total_completion_tokens,
+            "total_tokens": tracker.total_tokens,
+        }

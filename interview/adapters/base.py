@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
 from interview.cases.models import CaseRecord
+from interview.storage.token_usage import TokenUsage
 
 
 @dataclass
@@ -60,6 +61,11 @@ class BaseMethodAdapter(ABC):
     @abstractmethod
     def resume(self, case: CaseRecord) -> AdapterResult:
         """Resume an interrupted interview session from persisted checkpoint/transcript."""
+        pass
+
+    @abstractmethod
+    def token_usage(self) -> TokenUsage:
+        """Fetch the method's cumulative token usage for all LLM calls so far."""
         pass
 
     @abstractmethod

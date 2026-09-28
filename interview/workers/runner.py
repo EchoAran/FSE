@@ -131,6 +131,18 @@ def main() -> None:
                     "error": sanitize_error_message(exc, proj_root),
                     "traceback": sanitize_text(traceback.format_exc(), proj_root),
                 })
+        elif cmd == "token_usage":
+            try:
+                res = handler.token_usage()
+                conn.send({"success": True, "data": res})
+            except Exception as exc:
+                from interview.storage.sanitizer import sanitize_error_message, sanitize_text
+                proj_root = Path.cwd()
+                conn.send({
+                    "success": False,
+                    "error": sanitize_error_message(exc, proj_root),
+                    "traceback": sanitize_text(traceback.format_exc(), proj_root),
+                })
         else:
             conn.send({"success": False, "error": f"Unknown command: {cmd}", "traceback": None})
 
