@@ -6,6 +6,7 @@ from src.config import InterviewConfig
 from src.core.abductive_slot_generator import AbductiveSlotGenerator
 from src.core.question_generator import QuestionGenerator
 from src.core.slot_filler import SlotFiller
+from src.llm_call_log import LLMCallLogger
 from src.models import (
     AbductionRecord,
     DialogueTurn,
@@ -30,9 +31,11 @@ class HashimotoInterviewer:
     ) -> None:
         """Initialize interviewer with configuration, LLM client, and prompt loader."""
         self.config = config or InterviewConfig()
+        self._call_logger = LLMCallLogger(runs_dir=self.config.runs_dir)
         self.llm_client = llm_client or OpenAIClient(
             api_key=self.config.api_key or None,
             base_url=self.config.base_url or None,
+            call_logger=self._call_logger,
         )
         self.prompt_loader = prompt_loader or PromptLoader()
 
@@ -100,6 +103,7 @@ class HashimotoInterviewer:
         else:
             self._case = case
 
+        self._call_logger.set_project(self._case.case_id)
         initial_slots = self.prompt_loader.load_initial_slots(self.config.initial_slots_path)
         self._slots = {s.name: Slot(name=s.name, category=s.category, value=s.value) for s in initial_slots}
         self._abduction_history = []

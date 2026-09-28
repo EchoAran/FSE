@@ -54,6 +54,8 @@ def main() -> None:
         config.max_turns = args.max_turns
 
     root_dir = Path(__file__).resolve().parent.parent
+    if not Path(config.runs_dir).is_absolute():
+        config.runs_dir = str(root_dir / config.runs_dir)
     if not Path(config.prompt_path).is_absolute():
         config.prompt_path = str(root_dir / config.prompt_path)
 

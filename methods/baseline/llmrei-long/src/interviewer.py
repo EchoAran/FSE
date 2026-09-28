@@ -3,6 +3,7 @@
 from src.client.base import BaseLLMClient
 from src.client.openai_client import OpenAIClient
 from src.config import InterviewConfig
+from src.llm_call_log import LLMCallLogger
 from src.models import InterviewTranscript, InterviewTurn, Message, RequirementCase
 from src.prompt.loader import PromptLoader
 from src.prompt.renderer import PromptRenderer
@@ -22,9 +23,11 @@ class LLMREIInterviewer:
     ) -> None:
         """Initialize the interviewer with configuration, LLM client, and prompt loader."""
         self.config = config or InterviewConfig()
+        self._call_logger = LLMCallLogger(runs_dir=self.config.runs_dir)
         self.llm_client = llm_client or OpenAIClient(
             api_key=self.config.api_key or None,
             base_url=self.config.base_url or None,
+            call_logger=self._call_logger,
         )
         self.prompt_loader = prompt_loader or PromptLoader()
 
@@ -64,6 +67,7 @@ class LLMREIInterviewer:
         else:
             self._case = case
 
+        self._call_logger.set_project(self._case.case_id)
         raw_prompt = self.prompt_loader.load(self.config.prompt_path)
         self._system_prompt = PromptRenderer.render(raw_prompt, self._case)
 
