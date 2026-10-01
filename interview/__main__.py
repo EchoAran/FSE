@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Root entrypoint script for the Requirements Elicitation Interview Environment."""
+"""Package entrypoint for the Requirements Elicitation Interview Environment."""
 
 import sys
 from interview.cli import main

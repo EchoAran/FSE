@@ -1,33 +1,35 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=64.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "interview"
 version = "0.1.0"
-description = "Unified multi-method requirements elicitation interview environment and RQ1 evaluation pipeline"
+description = "LLM-based requirements elicitation study: motivation analysis, multi-method interviews, and RQ1-RQ3 evaluation"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    # Core Runtime & Data Modeling (interview, proposed_method, baselines, evolution/rq1)
+    # Shared runtime: interviews, motivation study, methods, and RQ1-RQ3
     "pydantic>=2.7.0",
     "pyyaml>=6.0.0",
     "python-dotenv>=1.0.0",
     "httpx>=0.24.0",
+    "typing-extensions>=4.0.0",
 
-    # LLM SDKs & Token Processing (interviewee agent, methods, evolution/rq1)
+    # Interview model clients and token processing
     "openai>=1.30.0",
     "tiktoken>=0.7.0",
 
-    # Scientific Computing, Clustering & Statistical Testing (SparkMe & evolution/rq1)
+    # Scientific computing, clustering, and statistics (SparkMe, RQ1, RQ2)
     "numpy>=1.24.0",
     "scipy>=1.10.0",
     "scikit-learn>=1.3.0",
 
-    # Vector Storage & Baseline Frameworks (SparkMe)
+    # SparkMe vector storage, model framework, and PDF context loading
     "faiss-cpu>=1.8.0",
     "langchain-core>=0.3.0",
     "langchain-openai>=0.2.0",
+    "PyPDF2>=3.0.0",
 ]
 
 [project.optional-dependencies]
@@ -37,8 +39,29 @@ dev = [
 ]
 extra-providers = [
     "langchain-together>=0.2.0",
-    "anthropic>=0.20.0",
+    "anthropic[vertex]>=0.20.0",
+    "google-auth>=2.0.0",
+    "google-cloud-aiplatform>=1.38.0",
 ]
+# Install in the interpreter selected by RQ3's coding.agent_python.
+rq3-agent = [
+    "mini-swe-agent==2.4.6",
+]
+
+# Method workers load methods/ from the source checkout; run from its root.
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.packages.find]
+include = ["interview*", "motivation*", "evolution*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+interview = ["config/*.example.yaml", "interviewee/*.txt"]
+motivation = ["config/*.example.yaml", "prompts/*.txt"]
+"evolution.rq1" = ["config/*.example.yaml", "prompts/*.txt"]
+"evolution.rq2" = ["config/*.example.yaml", "prompts/*.txt"]
+"evolution.rq3" = ["config/*.example.yaml", "prompts/*.txt", "cases.jsonl", "container/Dockerfile"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

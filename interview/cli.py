@@ -103,8 +103,8 @@ def main(args: Optional[list] = None) -> int:
     interviewee_config = parsed.interviewee_config
     if not interviewee_config and not parsed.interactive:
         for candidate in [
-            Path("interview/config/interviewee.yaml"),
-            Path("interview/config/interviewee.example.yaml"),
+            Path("interview/config/default.yaml"),
+            Path("interview/config/default.example.yaml"),
         ]:
             if candidate.is_file():
                 interviewee_config = str(candidate)
