@@ -1,0 +1,172 @@
+# Implementation task: Nenios Child Care Management
+
+The requirements below were elicited in an interview and reviewed before delivery.
+
+## Reviewed requirements
+
+# Software Requirements Specification: Nenios Child Care Management
+
+## 1. Scope and Context
+
+### [SC-001]
+The system shall be a web-based management system for a child care center.
+
+### [SC-002]
+The system shall support day-to-day administration, staff workflows, and central records for families, enrollment, billing, and child information.
+
+## 2. Actors
+
+### [ST-001]
+The system shall support administrators, office staff, teachers, and parents or guardians as stakeholders or users of system outputs.
+
+## 3. Functional Requirements
+
+### [FR-001]
+The system shall allow staff to register and maintain family profiles with parent or guardian contact details and linked children.
+
+### [FR-002]
+The system shall support enrollment management, including showing which children are enrolled, which are pending, and their waiting list position.
+
+### [FR-003]
+The system shall support moving a child from the waiting list to active enrollment when a spot opens.
+
+### [FR-004]
+The system shall allow staff to identify the next child in line for the appropriate classroom or age group when a spot opens.
+
+### [FR-005]
+The system shall check classroom capacity before confirming a waiting-list-to-enrollment move.
+
+### [FR-006]
+The system shall support classroom capacity tracking by classroom and age group.
+
+### [FR-007]
+The system shall provide staff with a quick view of available classroom spots by classroom and age group.
+
+### [FR-008]
+The system shall store each child’s profile along with health and immunization information.
+
+### [FR-009]
+The system shall allow staff to quickly see whether child health and immunization records are current or missing information.
+
+### [FR-010]
+The system shall support monitoring compliance related to child health and immunization information.
+
+### [FR-011]
+The system shall generate charges for each family based on the child’s enrollment and any applicable care schedule or fees.
+
+### [FR-012]
+The system shall allow staff to see what has been billed, what has been paid, and what is still outstanding.
+
+### [FR-013]
+The system shall produce statements or receipts for parents if needed.
+
+### [FR-014]
+The system shall produce clear information for parents about enrollment status, billing, and appropriate child or center updates.
+
+### [FR-015]
+The system shall reduce the need for staff to prepare parent-facing information manually by enabling faster sharing of consistent information.
+
+### [FR-016]
+The system shall support internal operational reporting for enrollment counts, vacancies, outstanding balances, and upcoming immunization issues.
+
+### [FR-017]
+The system shall provide a daily snapshot of enrollment and classroom occupancy.
+
+### [FR-018]
+The system shall provide a view of the waiting list and any open spots.
+
+### [FR-019]
+The system shall provide a billing summary showing unpaid invoices.
+
+### [FR-020]
+The system shall provide a health reminder view for immunizations that are due or missing.
+
+### [FR-021]
+The system shall allow authorized staff to share up-to-date information through a central system.
+
+### [FR-022]
+The system shall support central storage and lookup of family, enrollment, billing, and child information.
+
+### [FR-023]
+The system shall support reviewing audit trail entries to review decisions, track errors, and answer questions if there is a dispute.
+
+## 4. Business Rules and Constraints
+
+### [BR-001]
+The system shall prevent staff from placing too many children in a classroom.
+
+### [BR-002]
+Role-based access control shall restrict each employee to seeing and editing only the parts of the system that match their job.
+
+### [BR-003]
+Role-based access control shall ensure that office staff, teachers, and administrators do not all have the same access.
+
+### [BR-004]
+Only authorized staff shall be able to see or change sensitive information.
+
+### [BR-005]
+The system shall maintain an audit trail that records who changed a record, what changed, and when.
+
+### [BR-006]
+Audit trail logs shall be searchable enough for management to review them when needed.
+
+## 5. Data and External Interfaces
+
+None specified.
+
+## 6. Quality Requirements
+
+### [QR-001]
+The system shall reduce manual work for staff.
+
+### [QR-002]
+The system shall keep family, enrollment, and billing information accurate in one place.
+
+### [QR-003]
+The system shall be easy enough for staff to learn quickly.
+
+### [QR-004]
+The system shall be usable reliably in day-to-day operations without causing more confusion.
+
+## 7. Exceptions and Boundary Conditions
+
+None specified.
+
+## 8. Unresolved Information
+
+*Note: The following items represent unresolved or tentative information and are not mandatory implementation targets.*
+
+### [UN-001]
+The exact parent-facing visibility model, including how much information is shown directly to parents versus generated by staff, remains to be confirmed.
+
+### [UN-002]
+The exact special waiting list priority rules, such as sibling priority or approved dates, remain to be confirmed.
+
+### [UN-003]
+Compliance and licensing requirements that may affect the data stored and reported remain to be confirmed.
+
+### [UN-004]
+Security and data privacy requirements must be reviewed before finalization.
+
+## Delivery requirements
+
+Implement the software described by the requirements above in `/workspace`.
+`/workspace` is the only directory available to this task and starts empty.
+
+1. Create a runnable program that implements the requirements.
+2. Decide a build command, a test command and a run command for the program.
+3. Run the build and test commands that apply and fix the problems you find.
+4. Write `/workspace/delivery.json` describing how to build, test and run the program.
+
+`delivery.json` is a JSON object with exactly these fields:
+
+- `build_command`: shell command that prepares the program, or an empty string when no build step is needed
+- `test_command`: shell command that runs the delivered tests, or an empty string when no tests are delivered
+- `run_command`: shell command that starts the program
+- `interface_type`: one of `http`, `cli`, `gui`, `file`
+- `local_url`: URL that reaches the program when `interface_type` is `http`, otherwise an empty string
+- `known_limitations`: list of strings describing what the delivered software does not do
+
+An empty `test_command` records that no test entry point was delivered. It does
+not mean that the software passes tests. Implement only what the requirements
+state and do not assume behaviour that the requirements leave open.

@@ -1,0 +1,601 @@
+{
+  "case_id": "PURE_061",
+  "method_id": "proposed_method",
+  "project_name": "Gaia Object Generator",
+  "initial_requirements": "The Gaia science-processing community needs a fast simulator that can generate catalog, auxiliary, intermediate, and statistically representative final-mission data for Gaia instruments. Users should be able to select the processing stage and relevant error models, produce large simulated datasets without running the full telemetry and mission-database chain, and deliver results compatible with the wider Gaia processing environment as scientific models evolve.",
+  "source_status": "method_finished",
+  "completed_turns": 49,
+  "method_max_turns": 100,
+  "finish_message": "All core requirement topics have been successfully completed. The interview is now complete. Thank you for your valuable time and participation!",
+  "ending_observation": "unknown",
+  "messages": [
+    {
+      "message_id": "M001",
+      "turn_index": 0,
+      "role": "interviewer",
+      "content": "Could you describe, in your own words, the main situations where a simulation is needed and what mission-processing gap it is meant to address in your workflow?"
+    },
+    {
+      "message_id": "M002",
+      "turn_index": 1,
+      "role": "interviewee",
+      "content": "We need simulations mainly when we want to test processing ideas, tune error models, or generate data for scenarios that are too large or too expensive to obtain through the real mission pipeline. It also helps when scientists are developing or changing models and need representative datasets before the full chain is available or practical to run.\nThe gap it addresses is that the normal telemetry and mission-database workflow is too heavy and too slow for iterative development and large-scale experimentation. We need something that can produce realistic Gaia-like products directly at the relevant processing stage without depending on the full upstream chain every time."
+    },
+    {
+      "message_id": "M003",
+      "turn_index": 1,
+      "role": "interviewer",
+      "content": "Which Gaia processing stages should the simulator support when generating data?"
+    },
+    {
+      "message_id": "M004",
+      "turn_index": 2,
+      "role": "interviewee",
+      "content": "It should support the main stages we care about in the Gaia processing flow, especially catalog, auxiliary, intermediate, and final-mission style outputs. In practice, we need to be able to choose the stage that matches the user’s analysis or testing need, rather than forcing everything through one fixed level of detail."
+    },
+    {
+      "message_id": "M005",
+      "turn_index": 2,
+      "role": "interviewer",
+      "content": "What scientific or operational outcomes should the simulator enable you to evaluate or produce at each of those stages?"
+    },
+    {
+      "message_id": "M006",
+      "turn_index": 3,
+      "role": "interviewee",
+      "content": "At the catalog stage, we’d want to evaluate basic source populations and whether the synthetic sky content looks plausible for downstream work. At the auxiliary and intermediate stages, the simulator should let us test pipeline behavior, data quality handling, and the impact of different error models or instrument assumptions.\nFor final-mission style output, the goal is to produce statistically representative datasets that can be used for validation, science analysis, and integration testing in the wider Gaia processing environment. The exact outputs vary by use case, but the common requirement is that they be realistic enough to exercise the science models and processing chain properly."
+    },
+    {
+      "message_id": "M007",
+      "turn_index": 3,
+      "role": "interviewer",
+      "content": "Who are the main people or teams that would use each kind of simulation output, and what are they trying to accomplish with it in their day-to-day work?"
+    },
+    {
+      "message_id": "M008",
+      "turn_index": 4,
+      "role": "interviewee",
+      "content": "The main users would be the Gaia science and processing teams, plus model developers and validation people who need realistic data to test changes before they go into the wider environment. In day-to-day work, they’d use catalog and intermediate products to check assumptions, debug algorithms, and compare expected versus simulated behavior, while final-mission style outputs would support broader validation and integration work.\nI’d also expect analysts working on instrument performance or error characterization to use these outputs when they need to explore “what if” cases quickly, without waiting for the full mission database and telemetry chain."
+    },
+    {
+      "message_id": "M009",
+      "turn_index": 4,
+      "role": "interviewer",
+      "content": "When the simulator needs input data, what kinds of real-world information or source entities does it rely on, and how do those inputs vary depending on the analysis or testing scenario?"
+    },
+    {
+      "message_id": "M010",
+      "turn_index": 5,
+      "role": "interviewee",
+      "content": "It relies on Gaia-relevant source descriptions, instrument and error-model parameters, and whatever background or population information is needed to make the scenario realistic. Depending on the use case, that might mean a fairly simple catalog of sources for a quick test, or much richer auxiliary information when we’re trying to mimic a specific processing stage or scientific model.\nThe inputs vary mainly by level of fidelity and by what the user is trying to validate. If they only need an operational check, the input can be lightweight, but if they’re studying a science case or a pipeline sensitivity issue, they’ll want more detailed, scenario-specific source and instrument assumptions."
+    },
+    {
+      "message_id": "M011",
+      "turn_index": 5,
+      "role": "interviewer",
+      "content": "Are there any business rules for how parameter files, random seeds, or other configuration artefacts should be versioned, selected, or handled when a simulation needs to be rerun, reproduced, or adjusted for a different scenario?"
+    },
+    {
+      "message_id": "M012",
+      "turn_index": 6,
+      "role": "interviewee",
+      "content": "Yes, reproducibility is important, so the simulator should keep track of the exact configuration used for a run, including parameter files and the random seed. If someone reruns the same scenario, they should be able to get the same output or at least trace why it differs if something has changed.\nI’d expect configuration artefacts to be versioned in a way that makes it clear which scientific model or error model they belong to, and users should be able to select a saved configuration rather than rebuilding it manually each time. If the scenario is adjusted, we’d want the differences to be explicit so the run is still auditable."
+    },
+    {
+      "message_id": "M013",
+      "turn_index": 6,
+      "role": "interviewer",
+      "content": "Who should be allowed to access the simulation inputs and outputs, and are there any restrictions on viewing, modifying, or exporting them?"
+    },
+    {
+      "message_id": "M014",
+      "turn_index": 7,
+      "role": "interviewee",
+      "content": "Access should mainly be limited to the Gaia science-processing community and whatever authorized collaborators are working on the relevant pipeline or model area. In general, people can view outputs they’re entitled to, but only a smaller set of users should be able to modify shared inputs, configuration, or baseline model definitions.\nExporting should be possible, since the whole point is to use the data in the wider processing environment, but I’d expect some control around approved formats and maybe permissions for sensitive or unpublished scenario data. I don’t know that we have a final policy for every case yet, so that would need to be confirmed with the project leads."
+    },
+    {
+      "message_id": "M015",
+      "turn_index": 7,
+      "role": "interviewer",
+      "content": "Under what conditions, if any, should the simulator favor higher scientific fidelity over faster execution, and are there particular mission scenarios or processing stages where that trade-off changes?"
+    },
+    {
+      "message_id": "M016",
+      "turn_index": 8,
+      "role": "interviewee",
+      "content": "The default should be fast enough for routine testing and iteration, but we should favor higher scientific fidelity when the run is meant to validate a science model, an error model, or a pipeline change that could affect published results. In those cases, correctness and realism matter more than turnaround time.\nThat trade-off definitely changes by stage. For early catalog or quick operational checks, speed is usually more important, while for intermediate and final-mission style simulations, especially when comparing against real mission behavior, we’d accept longer runtimes to get more faithful results."
+    },
+    {
+      "message_id": "M017",
+      "turn_index": 8,
+      "role": "interviewer",
+      "content": "When a simulation stage is expected to run slowly for higher fidelity, what specific practical limits or exceptions should still force it to stay fast, if any?"
+    },
+    {
+      "message_id": "M018",
+      "turn_index": 9,
+      "role": "interviewee",
+      "content": "Even with higher fidelity, it still has to stay practical for interactive use and routine validation, so we wouldn’t want a run to block people for an unreasonable amount of time. If a configuration becomes so slow that it’s no longer useful for day-to-day testing or repeated scenario exploration, that’s too much.\nThe main exception would be an explicit high-precision validation run where the user has intentionally chosen fidelity over turnaround time. Outside of that, I’d expect us to keep some cap on runtime or provide a lighter alternative so teams can still iterate."
+    },
+    {
+      "message_id": "M019",
+      "turn_index": 9,
+      "role": "interviewer",
+      "content": "What practical runtime cap or fallback would you want to apply by simulation stage when a run is not an explicit high-precision validation, so that it stays usable for routine testing and repeated iteration?"
+    },
+    {
+      "message_id": "M020",
+      "turn_index": 10,
+      "role": "interviewee",
+      "content": "I’d want the earlier stages, like catalog or quick intermediate runs, to stay within minutes to maybe under an hour for normal use, because those are the ones people will rerun often while tuning inputs. For heavier final-mission style simulations, a few hours might be acceptable if they’re still meant for routine validation, but beyond that it becomes more of a special-purpose batch job.\nIf a run is going to exceed that, the fallback should be a reduced-fidelity mode, a smaller sample, or a staged run that lets people check results incrementally instead of waiting for the full dataset every time."
+    },
+    {
+      "message_id": "M021",
+      "turn_index": 10,
+      "role": "interviewer",
+      "content": "What broader business scenario should the simulator support end to end when those time limits and fallback modes are in play, and what outcome would make a run feel successful for the teams using it?"
+    },
+    {
+      "message_id": "M022",
+      "turn_index": 11,
+      "role": "interviewee",
+      "content": "It should support the common workflow where a team selects a Gaia processing stage, chooses the relevant model and error assumptions, generates a representative dataset, and then uses that output to test or compare pipeline behavior without having to run the full mission chain. That end-to-end flow needs to work even when they’re using a faster fallback mode, as long as the output is still good enough for the intended check.\nA run feels successful if the team can get a scientifically credible dataset quickly enough to iterate, and if the results are traceable back to the configuration that produced them. If they can reproduce it later or adapt it cleanly for a new scenario, that’s really the main win for us."
+    },
+    {
+      "message_id": "M023",
+      "turn_index": 11,
+      "role": "interviewer",
+      "content": "When a run is considered successful, how do you want the team to judge that the dataset is scientifically credible enough for the intended check, and what specific traceability or reproducibility evidence should the simulator preserve to make that determination?"
+    },
+    {
+      "message_id": "M024",
+      "turn_index": 12,
+      "role": "interviewee",
+      "content": "For credibility, the team would mainly judge whether the simulated distributions, selected error models, and stage-specific behavior look consistent with the science question or pipeline change they’re testing. It doesn’t have to be a perfect physical replica every time, but it should be good enough that results aren’t misleading for that use case.\nFor traceability, the simulator should preserve the exact configuration used, including the parameter set version, random seed, processing stage, model versions, and any key overrides or scenario notes. If possible, it should also keep a run identifier and enough provenance to link the output back to the inputs so someone else can reproduce or audit it later."
+    },
+    {
+      "message_id": "M025",
+      "turn_index": 12,
+      "role": "interviewer",
+      "content": "What level of guidance, defaults, or guided templates would scientists without software expertise need so they can configure a run correctly without relying on an engineer, and are there any situations where that self-service setup should be restricted or supported differently?"
+    },
+    {
+      "message_id": "M026",
+      "turn_index": 13,
+      "role": "interviewee",
+      "content": "We’d want enough guidance that a scientist can pick a stage, choose a sensible preset, and run a simulation without understanding all the internal mechanics. Good defaults and a few guided templates would be important, especially for common use cases like quick validation, scenario comparison, or representative final-mission sampling.\nSelf-service should be more limited when the run changes shared baseline models, uses experimental parameters, or is intended to support a formal deliverable. In those cases, I’d expect a review step or at least stronger guardrails, because those setups can affect other users or be easy to misconfigure."
+    },
+    {
+      "message_id": "M027",
+      "turn_index": 13,
+      "role": "interviewer",
+      "content": "As you think about the initial deployment and move into the Gaia workflow, what would the first practical rollout need to accomplish for the teams using it, and what parts of their current way of working would have to change for the simulator to fit in smoothly?"
+    },
+    {
+      "message_id": "M028",
+      "turn_index": 14,
+      "role": "interviewee",
+      "content": "The first rollout needs to let teams generate useful Gaia-like datasets quickly enough that they can start using it for everyday testing instead of waiting on the full telemetry and mission database chain. If it can reliably cover the most common processing stages and produce outputs that plug into the existing environment, that would be enough to prove value early.\nWhat would change is mostly that they’d stop treating simulation as a bespoke, engineer-led task and start using it as a normal part of their workflow. That means more standardized configurations, more reliance on presets and provenance, and less manual stitching together of inputs just to get a test dataset."
+    },
+    {
+      "message_id": "M029",
+      "turn_index": 14,
+      "role": "interviewer",
+      "content": "Are there any Gaia instrument or pipeline terms that must be preserved exactly in the shared vocabulary, and if so, are there cases where synonyms, abbreviations, or renamed stage labels should be handled differently?"
+    },
+    {
+      "message_id": "M030",
+      "turn_index": 15,
+      "role": "interviewee",
+      "content": "Yes, some core Gaia instrument and pipeline stage names really need to stay exact, because people use them as reference points when comparing outputs or discussing process behavior. If those labels drift, it gets confusing very quickly across science and operations teams.\nI’d treat synonyms or abbreviations as acceptable only in the user interface or helper text, not in the underlying saved configuration or exported provenance. If a stage gets renamed over time, the simulator should preserve the official current label and, if needed, map older names carefully so older runs remain understandable."
+    },
+    {
+      "message_id": "M031",
+      "turn_index": 15,
+      "role": "interviewer",
+      "content": "When a Gaia label needs to be kept exact in the simulator, what are the rules for handling older naming conventions, aliases, or renamed stages so that the shared vocabulary still matches the wider processing environment without confusing users or breaking downstream comparisons?"
+    },
+    {
+      "message_id": "M032",
+      "turn_index": 16,
+      "role": "interviewee",
+      "content": "Older names and aliases should be accepted for input if they clearly map to one current official label, but the simulator should normalize them as soon as the run is saved. The preserved output and provenance should show the official stage name, while still recording the legacy term somewhere in the metadata so people can trace what was entered.\nIf a rename is ambiguous or the mapping has changed across releases, I’d rather the system stop and ask for confirmation than guess. That keeps downstream comparisons clean and avoids silent mismatches with the wider processing environment."
+    },
+    {
+      "message_id": "M033",
+      "turn_index": 16,
+      "role": "interviewer",
+      "content": "Are there any cases where a Gaia label should be left as a legacy or tentative name in the simulator’s saved configuration or provenance, rather than being normalized immediately to the current official label?"
+    },
+    {
+      "message_id": "M034",
+      "turn_index": 17,
+      "role": "interviewee",
+      "content": "Yes, if the label itself is still provisional in the wider Gaia workflow, I’d want the simulator to preserve it as tentative rather than forcing a normalization too early. That way the saved configuration reflects the real state of the science model or pipeline vocabulary at the time of the run.\nI’d also keep the legacy form if the whole point of the run is to reproduce an older analysis exactly as it was done then. In that case, changing the label would make the provenance less faithful, even if the current official name is different."
+    },
+    {
+      "message_id": "M035",
+      "turn_index": 17,
+      "role": "interviewer",
+      "content": "Are there any interface contracts, schemas, or file layouts in the Gaia workflow that the simulator needs to preserve exactly, and if so, what should happen when an older or provisional structure conflicts with the current official one?"
+    },
+    {
+      "message_id": "M036",
+      "turn_index": 18,
+      "role": "interviewee",
+      "content": "Yes, the simulator needs to preserve the published interfaces and file layouts that downstream Gaia tools already depend on, especially anything used for ingest, comparison, or archival. If an older or provisional structure conflicts with the current one, the default should be to support the official current format and only allow the older one when the run is explicitly marked as legacy-compatible.\nIf there’s a real conflict that could change interpretation of the data, I’d want the system to fail clearly rather than silently adapting. In practice, that means versioning and explicit conversion rules are better than trying to hide the difference."
+    },
+    {
+      "message_id": "M037",
+      "turn_index": 18,
+      "role": "interviewer",
+      "content": "What accepted error bounds or validation tolerances should the simulator use when generated outputs are compared against expected Gaia results, and are there any cases where those tolerances should tighten or be disabled for specific runs?"
+    },
+    {
+      "message_id": "M038",
+      "turn_index": 19,
+      "role": "interviewee",
+      "content": "We’d expect tolerances to be tied to the type of output and the intended use of the run, not one single universal bound. For exploratory or representative simulations, a reasonable statistical tolerance is fine, but for regression checks or calibration-like comparisons, the bounds should be much tighter and aligned with whatever the relevant Gaia pipeline stage expects.\nThere are also cases where tolerance should effectively be disabled or set to near-zero, especially when the goal is to verify exact schema compatibility, deterministic transforms, or legacy reproduction. If a run is meant to prove bit-for-bit or row-for-row consistency, then any deviation should be treated as a failure rather than absorbed by a loose validation window."
+    },
+    {
+      "message_id": "M039",
+      "turn_index": 19,
+      "role": "interviewer",
+      "content": "When a scientist is selecting the processing stage to generate, what guidance or default rules should the simulator use to help them choose the right stage for the intended run without needing to know the internal pipeline details?"
+    },
+    {
+      "message_id": "M040",
+      "turn_index": 20,
+      "role": "interviewee",
+      "content": "The simulator should guide them by asking what they want the data to be used for, rather than forcing them to think in internal pipeline terms. So if they want quick algorithm testing, it should steer them toward an earlier or lighter stage, and if they want realistic end-to-end behavior, it should suggest a later or final-mission stage with the relevant errors included.\nDefaults should be based on the most common safe choice for that use case, with a short explanation of what fidelity they gain or lose by moving earlier or later in the chain. If the stage choice would materially affect interpretation, the tool should warn them before they run, but still let an experienced user override it."
+    },
+    {
+      "message_id": "M041",
+      "turn_index": 20,
+      "role": "interviewer",
+      "content": "When multiple error models could apply to the same run, how should the simulator decide which one takes precedence, whether they should be combined, or whether one should suppress the others?"
+    },
+    {
+      "message_id": "M042",
+      "turn_index": 21,
+      "role": "interviewee",
+      "content": "The cleanest rule is to make precedence explicit in the run configuration rather than inferred from order or names. If the selected models overlap, the simulator should combine them only when we’ve defined that combination as valid; otherwise it should treat them as mutually exclusive and reject the configuration or ask the user to choose one.\nIn general, a pipeline-stage-specific model should override a generic default if both are present, because the more specific one is usually the better match to the intended Gaia behavior. But if there’s any risk of double-counting the same effect, I’d rather suppress one and log that decision than quietly apply both."
+    },
+    {
+      "message_id": "M043",
+      "turn_index": 21,
+      "role": "interviewer",
+      "content": "What should happen in the everyday workflow when someone needs a simulation output for downstream use—such as a test dataset or a handoff to another tool—if the needed inputs aren’t fully available, the run is incomplete, or the output doesn’t match the expected downstream format?"
+    },
+    {
+      "message_id": "M044",
+      "turn_index": 22,
+      "role": "interviewee",
+      "content": "If the required inputs aren’t fully available, the simulator should stop and mark the run as incomplete rather than producing something that looks finished. For downstream handoff, I’d only want it to export outputs that pass the expected format checks; anything else should be clearly flagged as unusable or provisional so another tool doesn’t ingest it by mistake.\nIn everyday use, the system should also tell the user exactly what is missing or mismatched and, if possible, offer the nearest valid partial output separately from the official deliverable. That keeps people moving without hiding the fact that the run isn’t actually fit for downstream processing."
+    },
+    {
+      "message_id": "M045",
+      "turn_index": 22,
+      "role": "interviewer",
+      "content": "Would you want simulation to be a normal part of the team’s everyday workflow now, or should that remain tentative for the moment?"
+    },
+    {
+      "message_id": "M046",
+      "turn_index": 23,
+      "role": "interviewee",
+      "content": "I’d treat it as a normal part of the workflow for the cases we already rely on it for, like testing and producing representative data. For anything broader or still under evaluation, I’d keep that tentative until we’ve validated it against the current Gaia models and downstream tools."
+    },
+    {
+      "message_id": "M047",
+      "turn_index": 23,
+      "role": "interviewer",
+      "content": "For the cases where you want to reduce manual stitching, what inputs should the simulator be able to assemble automatically, and where should it still require someone to provide or verify parts of the configuration?"
+    },
+    {
+      "message_id": "M048",
+      "turn_index": 24,
+      "role": "interviewee",
+      "content": "It should be able to assemble the standard, repeatable pieces automatically, like pulling the selected stage defaults, the compatible error model set, and the usual metadata needed to make the output look like a Gaia product. It can also infer safe compatibility choices when the user has already given the key goal of the run.\nI’d still want a person to provide or verify anything that affects scientific meaning, like special calibration assumptions, unusual source populations, or a nonstandard downstream target format. If the simulator has to guess on those, it should stop and ask for confirmation instead of filling them in silently."
+    },
+    {
+      "message_id": "M049",
+      "turn_index": 24,
+      "role": "interviewer",
+      "content": "When the simulator is assembling the input data entities for a run, which ones should it treat as required versus optional, and what should it do if a needed entity is missing, ambiguous, or incompatible with the selected stage or error model?"
+    },
+    {
+      "message_id": "M050",
+      "turn_index": 25,
+      "role": "interviewee",
+      "content": "The required entities are the ones that define the run unambiguously, like the selected processing stage, the source or population definition, and the specific error model or model set if that stage depends on one. Optional entities would be things like extra metadata, comments, or convenience defaults that don’t change the scientific meaning of the output.\nIf a needed entity is missing, the simulator should fail fast and tell the user exactly what is missing. If it’s ambiguous or incompatible with the chosen stage or error model, it should not guess silently; it should either ask for a disambiguation or reject the configuration with a clear reason."
+    },
+    {
+      "message_id": "M051",
+      "turn_index": 25,
+      "role": "interviewer",
+      "content": "For any outputs that only partially pass the checks or can’t be exported safely, would you want the simulator to treat that handoff rule as a firm requirement now, or should it record those outputs as provisional for the time being?"
+    },
+    {
+      "message_id": "M052",
+      "turn_index": 26,
+      "role": "interviewee",
+      "content": "For now I’d want that as a firm requirement for anything that’s going to be handed off to another tool or used as an official downstream input. If it doesn’t pass the checks, it shouldn’t be treated as a normal deliverable.\nThat said, I would still want the simulator to keep a provisional record for inspection or debugging, as long as it’s clearly separated from the accepted output and very visibly marked as not safe for downstream use."
+    },
+    {
+      "message_id": "M053",
+      "turn_index": 26,
+      "role": "interviewer",
+      "content": "When a user provides or verifies configuration details for the simulator, are there any cases where those elements should be accepted with warnings or defaults rather than stopping for confirmation, or should any uncertain or nonstandard configuration always be blocked until it is explicitly verified?"
+    },
+    {
+      "message_id": "M054",
+      "turn_index": 27,
+      "role": "interviewee",
+      "content": "If it’s a harmless convenience default, I’d accept it with a warning, especially when it doesn’t affect the scientific interpretation of the run. But if the uncertainty changes the meaning of the data, the stage behavior, or the downstream format, then it should be blocked until someone explicitly verifies it.\nSo the rule should be that defaults are fine for low-risk, standard items, while anything nonstandard or scientifically consequential needs confirmation before the run can proceed."
+    },
+    {
+      "message_id": "M055",
+      "turn_index": 27,
+      "role": "interviewer",
+      "content": "When required inputs are missing, incomplete, or only available in a partial form, what should the simulator do to report the gap to the user and preserve any usable partial results without making the run look complete?"
+    },
+    {
+      "message_id": "M056",
+      "turn_index": 28,
+      "role": "interviewee",
+      "content": "It should stop the run from being marked successful and show a clear error message listing exactly what is missing or incomplete. If there are usable partial results, those can be saved separately as provisional artifacts, but they need a strong label that says the run is incomplete and not fit for downstream use.\nI’d also want enough detail in the report for someone to fix the issue quickly, like which entity failed, what stage it affected, and whether the problem is a missing input, a bad combination, or a format mismatch."
+    },
+    {
+      "message_id": "M057",
+      "turn_index": 28,
+      "role": "interviewer",
+      "content": "When the simulator assembles those standard Gaia-compatible inputs automatically, are there any boundary cases where it should still stop and ask for confirmation instead of filling in a default—for example if the selected stage, error model set, or metadata would only be compatible with certain downstream products or processing variants?"
+    },
+    {
+      "message_id": "M058",
+      "turn_index": 29,
+      "role": "interviewee",
+      "content": "Yes, definitely. If the auto-filled choice would narrow the run to only certain downstream products, or if it depends on a processing variant that isn’t explicitly intended, it should stop and ask for confirmation rather than assume the user wants that path.\nI’d also want confirmation if the metadata would make the output look valid while actually steering it into a special-case interpretation, because that’s the kind of thing that can cause silent scientific mistakes."
+    },
+    {
+      "message_id": "M059",
+      "turn_index": 29,
+      "role": "interviewer",
+      "content": "When the simulator has to determine something that could change scientific meaning for downstream use, what specific cases should always require a person to verify it before output is produced, and are there any low-risk cases where it can still proceed on its own?"
+    },
+    {
+      "message_id": "M060",
+      "turn_index": 30,
+      "role": "interviewee",
+      "content": "Anything that affects the astrophysical content, calibration assumptions, source classification, or the exact error-model application should always require a person to verify it before output is produced. That also includes anything that changes which Gaia processing variant or downstream product the data is meant to support.\nLow-risk cases are things like formatting conveniences, file naming, ordering, or filling in clearly implied defaults where the scientific interpretation stays the same. Those can proceed on their own, but if there’s any doubt about whether the meaning changes, it should be treated as needing verification."
+    },
+    {
+      "message_id": "M061",
+      "turn_index": 30,
+      "role": "interviewer",
+      "content": "For the low-risk cases that can self-approve, are there any specific limits on when a change that looks purely cosmetic—such as renaming a file, reordering fields, or filling a missing default—should still be sent for verification because it might alter how the output is interpreted downstream?"
+    },
+    {
+      "message_id": "M062",
+      "turn_index": 31,
+      "role": "interviewee",
+      "content": "Yes, if the cosmetic change could affect how another Gaia tool parses, matches, or validates the output, then it should go for verification. A file rename is harmless only if the receiving process doesn’t rely on naming conventions, and reordering fields is harmless only if the format is explicitly order-insensitive.\nFilling a missing default should also be checked whenever that default could change which stage variant, calibration path, or product class downstream users think they are getting. So the limit is really whether the change is truly presentation-only, or whether it can influence interpretation in any way."
+    },
+    {
+      "message_id": "M063",
+      "turn_index": 31,
+      "role": "interviewer",
+      "content": "What does a broad simulation campaign need to accomplish in your business context, and which parts of the workflow tend to drive the biggest capacity or scale constraints when you run it at larger volumes?"
+    },
+    {
+      "message_id": "M064",
+      "turn_index": 32,
+      "role": "interviewee",
+      "content": "A broad campaign needs to generate many statistically useful Gaia-like datasets across different stages and assumptions so scientists can compare models, test processing changes, and prepare downstream workflows without waiting for the full mission chain. In business terms, the main goal is to get credible volume quickly enough that people can iterate on science cases instead of spending time on infrastructure.\nThe biggest scale constraints are usually the size of the source catalog, the number of error-model combinations, and the repeated generation of intermediate products when you’re exploring parameter space. I’d also expect storage and export throughput to become a bottleneck before the actual simulation logic does, especially if we’re keeping provisional outputs and multiple variants for comparison."
+    },
+    {
+      "message_id": "M065",
+      "turn_index": 32,
+      "role": "interviewer",
+      "content": "When those large campaigns start stressing scale, what practical rules should determine whether you split the run into smaller batches, reuse or cache intermediate products, or push ahead with full regeneration, especially when storage or export throughput is becoming the limiting factor?"
+    },
+    {
+      "message_id": "M066",
+      "turn_index": 33,
+      "role": "interviewee",
+      "content": "If the same intermediate product can be reused without changing the science meaning, I’d cache it and batch the rest around it. If the inputs differ in any way that affects the error model, processing stage, or downstream interpretation, then regenerate instead of reusing.\nWhen storage or export is the bottleneck, splitting into smaller batches is usually the safest move, because it lets us checkpoint progress and avoid one huge failure. Full regeneration only makes sense when the change invalidates most of the earlier work, or when the cached material would be more expensive to manage than to recreate."
+    },
+    {
+      "message_id": "M067",
+      "turn_index": 33,
+      "role": "interviewer",
+      "content": "When the source catalog, error-model combinations, or repeated intermediate products start pushing the campaign toward a practical limit, what rule do you use to decide which of those becomes the gating constraint and how to adjust the run around it?"
+    },
+    {
+      "message_id": "M068",
+      "turn_index": 34,
+      "role": "interviewee",
+      "content": "The gating constraint should be whichever one is hardest to change without affecting scientific validity. If the source catalog is fixed by the science case, then that becomes the anchor and we vary batch size or reuse around it; if the catalog can be reduced without harming the study, then we trim it first.\nIn practice I’d judge by what would force a change in the final interpretation. The thing that most changes the meaning of the results is the constraint that should drive the run design, and everything else should be adapted around that."
+    },
+    {
+      "message_id": "M069",
+      "turn_index": 34,
+      "role": "interviewer",
+      "content": "Are there any resource limits or quotas during execution that you treat as hard stops or that change how you schedule, batch, or retry a broad simulation campaign?"
+    },
+    {
+      "message_id": "M070",
+      "turn_index": 35,
+      "role": "interviewee",
+      "content": "Yes, storage capacity is the clearest hard stop for us, along with any quota that would risk corrupting or truncating outputs. If we hit that, we need to stop or split the campaign before continuing.\nCompute limits are more of a scheduling constraint than a hard stop, unless they cause the run to miss a deadline or starve other priority work. In that case we’d batch more aggressively, shorten retry loops, or push lower-priority variants to a later window."
+    },
+    {
+      "message_id": "M071",
+      "turn_index": 35,
+      "role": "interviewer",
+      "content": "When provisional or variant outputs are being kept for comparison, what practical rule determines how long they should be retained, and are there any conditions under which you would discard, archive, or compress them earlier to stay within capacity?"
+    },
+    {
+      "message_id": "M072",
+      "turn_index": 36,
+      "role": "interviewee",
+      "content": "The practical rule is to keep them until the scientific comparison or validation step that depends on them is complete, and then retain only what’s needed for traceability. If the output is just an intermediate variant and it has already been superseded by a confirmed run, we can usually discard it sooner.\nWe’d archive or compress earlier when storage pressure starts to interfere with active campaigns, or when the files are still useful but not needed in fast access. Anything that may be needed to reproduce a published result or explain a processing choice should not be dropped early."
+    },
+    {
+      "message_id": "M073",
+      "turn_index": 36,
+      "role": "interviewer",
+      "content": "When a saved configuration needs to be reused, what practical rule determines which version is selected if there are multiple variants for the same model or error model, and how do you handle differences between the saved configuration and the current scenario?"
+    },
+    {
+      "message_id": "M074",
+      "turn_index": 37,
+      "role": "interviewee",
+      "content": "We’d normally select the latest approved version that matches the intended processing stage and science use case. If there are multiple variants, the one tied to the same validation baseline or campaign context should win over a newer but unvetted option.\nIf the saved configuration differs from the current scenario in a way that affects output meaning, we don’t silently reuse it; we either adapt it explicitly or treat it as a new configuration. Minor operational differences can be overridden if they don’t change interpretation, but anything scientific has to be surfaced and checked."
+    },
+    {
+      "message_id": "M075",
+      "turn_index": 37,
+      "role": "interviewer",
+      "content": "When campaign limits force you to choose what to constrain first, what practical rule do you use to decide which factor has to anchor the run design because changing it would most alter the scientific interpretation?"
+    },
+    {
+      "message_id": "M076",
+      "turn_index": 38,
+      "role": "interviewee",
+      "content": "The anchor should be the factor that defines the science question, usually the source catalog or the processing stage. If changing it would alter which objects are present or how the results should be interpreted, that has to stay fixed first.\nAfter that, we treat error models, batching, and output handling as the adjustable parts. In other words, the thing that changes the scientific meaning anchors the design, and everything else bends around it."
+    },
+    {
+      "message_id": "M077",
+      "turn_index": 38,
+      "role": "interviewer",
+      "content": "For simulator capabilities that are optional or deferred, what practical rule do you use to decide whether a capability should be left out of the current release, and under what conditions would it need to be included sooner?"
+    },
+    {
+      "message_id": "M078",
+      "turn_index": 39,
+      "role": "interviewee",
+      "content": "If a capability isn’t needed to produce the core Gaia data products at the chosen processing stage, and it doesn’t block realistic campaign scale or compatibility, we’d leave it out for the current release. We’d also defer it if the team can model the science acceptably with a simpler approximation for now.\nIt needs to come in sooner if people can’t validate results without it, or if omitting it would make the outputs incompatible with the wider processing environment. Anything that changes the scientific credibility of the simulator, or becomes necessary for the main user workflows, stops being optional."
+    },
+    {
+      "message_id": "M079",
+      "turn_index": 39,
+      "role": "interviewer",
+      "content": "When a capability is helping with scientific credibility or validation but still looks approximable, what practical threshold do you use to decide it can safely stay deferred for now rather than being brought into the release?"
+    },
+    {
+      "message_id": "M080",
+      "turn_index": 40,
+      "role": "interviewee",
+      "content": "We’d defer it only if the approximation stays within the tolerance agreed by the science users for that stage of the pipeline. If we don’t have a clear tolerance, then honestly we shouldn’t treat it as safe to defer.\nThe practical test is whether a knowledgeable user would still trust the outputs for validation and comparison without having to mentally compensate for the missing behavior. If the answer is no, it needs to move up."
+    },
+    {
+      "message_id": "M081",
+      "turn_index": 40,
+      "role": "interviewer",
+      "content": "When a broad campaign starts to hit limits, what practical rule do you use to decide whether the source catalog size, the number of error-model combinations, repeated intermediate-product generation, or output storage/export throughput should be the first thing you cap or redesign?"
+    },
+    {
+      "message_id": "M082",
+      "turn_index": 41,
+      "role": "interviewee",
+      "content": "We cap or redesign the thing that gives the least scientific value per unit of cost first. In practice, that often means repeated intermediate-product generation or extra error-model combinations before we touch the source catalog size, because the catalog usually defines the core science scope.\nIf output storage or export throughput is the bottleneck, that can become first simply because it blocks everything else. So the rule is really to protect the science-defining inputs first and constrain the operational multipliers before the core dataset."
+    },
+    {
+      "message_id": "M083",
+      "turn_index": 41,
+      "role": "interviewer",
+      "content": "When tolerance is near zero or disabled, what practical rules do you use to decide which outputs must be checked for exact schema, deterministic transform, or legacy-reproduction consistency, and which kinds of minor differences, if any, are still acceptable to treat as non-failures?"
+    },
+    {
+      "message_id": "M084",
+      "turn_index": 42,
+      "role": "interviewee",
+      "content": "If tolerance is effectively zero, we check anything that is part of the contract for that release: the schema, the deterministic transform steps, and any legacy-reproduction paths that users rely on for comparison. Those have to match exactly, or at least match within a very narrowly defined, documented exception.\nMinor differences are only acceptable if they are purely non-scientific, like ordering that doesn’t affect interpretation, metadata timestamps, or formatting that doesn’t change the content. Anything that could alter a downstream result or break reproducibility is a failure in that mode."
+    },
+    {
+      "message_id": "M085",
+      "turn_index": 42,
+      "role": "interviewer",
+      "content": "Are there any open scientific or technical issues in this release that need to be resolved before users can rely on the results for validation or comparison, and if so, what practical rule do you use to decide whether each issue must be fixed now, documented as an exception, or left for a later release?"
+    },
+    {
+      "message_id": "M086",
+      "turn_index": 43,
+      "role": "interviewee",
+      "content": "Yes, there are usually a few open items at this stage, but I don’t want to invent specifics without checking with the team. The practical rule is that anything that changes the scientific interpretation, breaks reproducibility, or prevents comparison against reference Gaia processing has to be fixed now.\nIf an issue is understood and bounded, and users can still validate safely with a documented caveat, then we can record it as an exception for this release. If it only affects completeness, convenience, or a non-critical edge case, then it can wait for a later release."
+    },
+    {
+      "message_id": "M087",
+      "turn_index": 43,
+      "role": "interviewer",
+      "content": "When aligning the simulator’s inputs and outputs with current Gaia assets for initial deployment, what practical rule do you use to decide whether a data format conversion must be done now, can be handled with a documented workaround, or can wait for a later migration step?"
+    },
+    {
+      "message_id": "M088",
+      "turn_index": 44,
+      "role": "interviewee",
+      "content": "If the current Gaia assets can’t be consumed or produced without the conversion, then it has to be done now. If the data can still move through the workflow with a reliable, documented workaround that users are willing to accept for the first release, then we can defer the conversion.\nIf the mismatch would only affect a future cleanup or a nicer integration path, that can wait for a later migration step. The key test is whether the format issue blocks the core simulator workflow or just makes it less elegant."
+    },
+    {
+      "message_id": "M089",
+      "turn_index": 44,
+      "role": "interviewer",
+      "content": "How are updated scientific models incorporated over time into the simulator’s outputs so they stay compatible with the wider Gaia processing environment as the models evolve?"
+    },
+    {
+      "message_id": "M090",
+      "turn_index": 45,
+      "role": "interviewee",
+      "content": "We’d treat the models as versioned inputs to the simulator, so the output stays tied to a known model set rather than changing silently underneath users. When a scientific model is updated, we’d make sure the new behavior is introduced in a controlled release and keep enough traceability in the output for users to know which model version generated it.\nIf a newer model would break compatibility with existing downstream Gaia processing, we’d preserve the older path or provide a switch until the wider environment has caught up. The main idea is that model evolution should be explicit and managed, not automatic and surprising."
+    },
+    {
+      "message_id": "M091",
+      "turn_index": 45,
+      "role": "interviewer",
+      "content": "In what situations would the simulator need to produce Gaia-like outputs directly at a given processing stage without running the full upstream telemetry and mission-database chain, and what practical rule do you use to decide when that shortcut is acceptable versus when the full chain is still required?"
+    },
+    {
+      "message_id": "M092",
+      "turn_index": 46,
+      "role": "interviewee",
+      "content": "We’d use the shortcut when the goal is to test or validate a specific processing stage, or to generate large representative datasets quickly without needing the earlier mission systems to be faithful. That’s especially useful when the upstream chain is slow, unavailable, or not relevant to the scientific question being asked.\nIt’s acceptable only if the skipped upstream steps are not expected to change the result in a way that matters for the intended use. If the downstream output depends strongly on those upstream details for credibility or comparison, then the full chain is still required."
+    },
+    {
+      "message_id": "M093",
+      "turn_index": 46,
+      "role": "interviewer",
+      "content": "When a Gaia label is still provisional or has an older form, what concrete rule should the simulator follow in saved configurations to preserve that status, and are there any cases where it should be normalized instead?"
+    },
+    {
+      "message_id": "M094",
+      "turn_index": 47,
+      "role": "interviewee",
+      "content": "In saved configurations, the simulator should preserve the label exactly as it was provided if its provisional or historical form matters to traceability or to reproducing an old run. I’d only normalize it when there is a clearly defined canonical form that the downstream tools require and when doing so won’t lose information about the original label.\nIf both forms are important, we’d usually keep the original plus a mapped canonical value rather than overwriting it."
+    },
+    {
+      "message_id": "M095",
+      "turn_index": 47,
+      "role": "interviewer",
+      "content": "When someone needs to audit or reproduce a simulated result later, what specific business rule should govern how the output is linked back to its exact input configuration and provenance so the trace remains dependable?"
+    },
+    {
+      "message_id": "M096",
+      "turn_index": 48,
+      "role": "interviewee",
+      "content": "The rule should be that every produced result must be traceable back to the exact input configuration and the simulator version that created it, with no ambiguity. Practically, that means we keep a durable reference to the full run settings, the model versions used, and any relevant environment or transformation identifiers.\nIf that chain can’t be reconstructed, then the output should not be treated as fully auditable for comparison or reproduction."
+    },
+    {
+      "message_id": "M097",
+      "turn_index": 48,
+      "role": "interviewer",
+      "content": "When a saved configuration may need to support both older scientific runs and newer model conventions, what practical rule should decide whether a label stays as originally recorded, is mapped to a canonical form, or is stored in both forms?"
+    },
+    {
+      "message_id": "M098",
+      "turn_index": 49,
+      "role": "interviewee",
+      "content": "The rule is to keep the originally recorded label whenever preserving historical meaning or reproducibility matters, because that is what lets us rerun or compare an older scientific case faithfully. If the downstream Gaia tools need a canonical label to function correctly, then we map it, but only in a way that does not destroy the original value.\nIf both the historical form and the canonical form are useful, we store both and make the original the source of truth."
+    }
+  ]
+}

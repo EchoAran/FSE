@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Qheadache</title>
+  <style>
+    :root { --bg:#f4f6fb; --panel:#ffffff; --ink:#223; --accent:#4f7cff; --good:#1f9d55; --bad:#e45757; }
+    body { margin:0; font-family:system-ui,Segoe UI,Arial,sans-serif; background:var(--bg); color:var(--ink); display:flex; min-height:100vh; }
+    .app { margin:auto; width:min(900px, 96vw); padding:16px; }
+    .card { background:var(--panel); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.08); padding:16px; }
+    .top { display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; }
+    h1 { margin:0; font-size:1.5rem; }
+    .stats { display:flex; gap:12px; flex-wrap:wrap; font-size:.95rem; }
+    button { border:0; border-radius:10px; padding:10px 14px; background:var(--accent); color:white; cursor:pointer; font-size:1rem; }
+    button.secondary { background:#e9eefc; color:#223; }
+    button:active { transform: translateY(1px); }
+    .board { margin-top:16px; display:grid; grid-template-columns:repeat(4, minmax(60px, 1fr)); gap:10px; }
+    .tile { aspect-ratio:1; display:flex; align-items:center; justify-content:center; border-radius:14px; font-size:1.4rem; font-weight:700; user-select:none; touch-action:manipulation; }
+    .block { background:linear-gradient(180deg, #86a8ff, #4f7cff); color:white; cursor:grab; }
+    .empty { background:repeating-linear-gradient(45deg, #eef1f8, #eef1f8 10px, #f8faff 10px, #f8faff 20px); border:2px dashed #d6dce8; }
+    .hint { margin-top:12px; min-height:1.5em; }
+    .hint.good { color:var(--good); }
+    .hint.bad { color:var(--bad); }
+    .history { margin-top:16px; font-size:.95rem; }
+    ul { margin:8px 0 0 18px; padding:0; }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="card">
+      <div class="top">
+        <div>
+          <h1>Qheadache</h1>
+          <div>Slide the numbered blocks into ascending order.</div>
+        </div>
+        <div class="stats">
+          <div><strong>Time:</strong> <span id="time">0</span>s</div>
+          <div><strong>Moves:</strong> <span id="moves">0</span></div>
+          <button id="resetBtn">Reset / Replay</button>
+        </div>
+      </div>
+
+      <div id="board" class="board" aria-label="Puzzle board"></div>
+      <div id="hint" class="hint"></div>
+
+      <div class="history">
+        <strong>Completion history</strong>
+        <ul id="history"></ul>
+      </div>
+    </div>
+  </div>
+
+<script>
+(() => {
+  const SIZE = 4;
+  const STORAGE_KEY = 'qheadache-state-v1';
+  const HISTORY_KEY = 'qheadache-history-v1';
+  const initialBoard = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,null,15];
+  const boardEl = document.getElementById('board');
+  const timeEl = document.getElementById('time');
+  const movesEl = document.getElementById('moves');
+  const hintEl = document.getElementById('hint');
+  const historyEl = document.getElementById('history');
+  const resetBtn = document.getElementById('resetBtn');
+
+  let state = loadState() || {
+    board: initialBoard.slice(),
+    moves: 0,
+    startedAt: Date.now(),
+    solved: false
+  };
+  if (!state.startedAt) state.startedAt = Date.now();
+
+  let timer = null;
+
+  function neighbors(idx) {
+    const row = Math.floor(idx / SIZE), col = idx % SIZE;
+    return [
+      idx - 1, idx + 1, idx - SIZE, idx + SIZE
+    ].filter(i => i >= 0 && i < 16 && Math.abs(Math.floor(i / SIZE) - row) + Math.abs(i % SIZE - col) === 1);
+  }
+
+  function render() {
+    boardEl.innerHTML = '';
+    state.board.forEach((v, idx) => {
+      const d = document.createElement('div');
+      d.className = 'tile ' + (v == null ? 'empty' : 'block');
+      d.textContent = v == null ? '' : String(v);
+      d.setAttribute('role', 'button');
+      d.setAttribute('aria-label', v == null ? 'Empty space' : `Tile ${v}`);
+      if (v != null && !state.solved) {
+        d.addEventListener('click', () => tryMove(idx));
+        d.addEventListener('touchstart', () => tryMove(idx), {passive:true});
+      }
+      boardEl.appendChild(d);
+    });
+    movesEl.textContent = state.moves;
+    timeEl.textContent = Math.floor((Date.now() - state.startedAt) / 1000);
+    hintEl.className = 'hint';
+    if (state.solved) {
+      hintEl.textContent = 'Success! Puzzle completed.';
+      hintEl.classList.add('good');
+    } else {
+      hintEl.textContent = 'Tap or click a tile adjacent to the empty space.';
+    }
+    renderHistory();
+    saveState();
+  }
+
+  function tryMove(idx) {
+    const empty = state.board.indexOf(null);
+    if (!neighbors(idx).includes(empty)) {
+      gentleInvalid();
+      return;
+    }
+    [state.board[idx], state.board[empty]] = [state.board[empty], state.board[idx]];
+    state.moves += 1;
+    if (isSolved()) finishPuzzle();
+    render();
+  }
+
+  function gentleInvalid() {
+    hintEl.textContent = 'That move is not allowed.';
+    hintEl.className = 'hint bad';
+    boardEl.animate([{ transform:'translateX(0)' }, { transform:'translateX(-4px)' }, { transform:'translateX(4px)' }, { transform:'translateX(0)' }], { duration:180 });
+  }
+
+  function isSolved() {
+    return state.board.every((v, i) => v === (i === 15 ? null : i + 1));
+  }
+
+  function finishPuzzle() {
+    state.solved = true;
+    const elapsed = Math.floor((Date.now() - state.startedAt) / 1000);
+    const result = { completedAt: new Date().toISOString(), timeSeconds: elapsed, moves: state.moves, score: Math.max(0, 1000 - elapsed * 5 - state.moves * 10) };
+    const history = loadHistory();
+    history.unshift(result);
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, 10)));
+    localStorage.removeItem(STORAGE_KEY);
+    hintEl.textContent = 'Success! Puzzle completed.';
+    hintEl.className = 'hint good';
+  }
+
+  function saveState() {
+    if (!state.solved) localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  }
+
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch { return null; }
+  }
+
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch { return []; }
+  }
+
+  function renderHistory() {
+    historyEl.innerHTML = '';
+    const history = loadHistory();
+    if (!history.length) { historyEl.innerHTML = '<li>No completions yet.</li>'; return; }
+    history.forEach(h => {
+      const li = document.createElement('li');
+      li.textContent = `${h.timeSeconds}s, ${h.moves} moves, score ${h.score}`;
+      historyEl.appendChild(li);
+    });
+  }
+
+  resetBtn.addEventListener('click', () => {
+    state = { board: initialBoard.slice(), moves: 0, startedAt: Date.now(), solved: false };
+    hintEl.className = 'hint';
+    render();
+  });
+
+  timer = setInterval(() => { if (!state.solved) timeEl.textContent = Math.floor((Date.now() - state.startedAt) / 1000); }, 250);
+  render();
+})();
+</script>
+</body>
+</html>

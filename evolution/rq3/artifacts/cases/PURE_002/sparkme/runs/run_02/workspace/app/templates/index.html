@@ -1,0 +1,15 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>GAMMA-J Web Store</title><style>body{font-family:Arial,sans-serif;max-width:1100px;margin:20px auto;padding:0 12px}section{border:1px solid #ccc;padding:12px;margin:12px 0;border-radius:8px}input,button{margin:4px 0} .warn{color:#8a4b00} .err{color:#b00020}</style></head><body>
+<h1>GAMMA-J Web Store</h1>
+<p>Store: <strong>{{ d.store_info.name or 'Unnamed store' }}</strong> | Currency: {{ d.store_info.currency }}</p>
+{% if validation_errors %}<div class="err"><h3>Checkout issues</h3><ul>{% for e in validation_errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+{% if import_summary %}<div><h3>Import summary</h3><p>Ready: {{ import_summary.succeeded }} | Skipped: {{ import_summary.skipped }} | Needs attention: {{ import_summary.needs_attention }} | Duplicates: {{ import_summary.duplicates }}</p></div>{% endif %}
+<section><h2>Setup</h2><form method="post" action="/setup"><input name="name" placeholder="Store name"><input name="currency" placeholder="Currency" value="USD"><button>Save setup</button></form></section>
+<section><h2>Products</h2><form method="post" action="/products"><input name="name" placeholder="Product name"><input name="sku" placeholder="SKU"><input name="barcode" placeholder="Barcode"><input name="category" placeholder="Category"><input name="price" placeholder="Price"><input name="stock" placeholder="Stock" type="number"><label><input type="checkbox" name="available" checked> Available</label><button>Add product</button></form><ul>{% for p in d.products %}<li>{{ p.name }} ({{ p.sku }}) - {{ p.price }}{% if not p.available %} [unavailable]{% endif %}</li>{% endfor %}</ul></section>
+<section><h2>Cart</h2><form method="post" action="/cart/add/1"><input name="qty" value="1" type="number"><button>Add product #1 to cart</button></form><p>Items in cart: {{ d.cart|length }}</p></section>
+<section><h2>Checkout</h2><form method="post" action="/orders"><input name="customer" placeholder="Customer name"><input name="address" placeholder="Shipping address"><input name="payment" placeholder="Payment details"><button>Place order</button></form></section>
+<section><h2>Import products</h2><form method="post" action="/import/products" enctype="multipart/form-data"><input type="file" name="file"><button>Upload CSV</button></form></section>
+<section><h2>Orders</h2><ul>{% for o in d.orders %}<li>Order {{ o.id }} - {{ o.customer }} - {{ o.payment_status }}<form method="post" action="/orders/{{ o.id }}/fail-payment" style="display:inline"><button>Simulate payment failure</button></form></li>{% endfor %}</ul></section>
+<section><h2>Notifications</h2><ul>{% for n in d.notifications %}<li>{{ n.kind }}: {{ n.message }} {% if n.unresolved %}(unresolved){% endif %}</li>{% endfor %}</ul></section>
+<section><h2>Audit log</h2><ul>{% for a in d.audit_log[-10:] %}<li>{{ a.time }} {{ a.entity }} {{ a.action }} {{ a.details }}</li>{% endfor %}</ul></section>
+</body></html>

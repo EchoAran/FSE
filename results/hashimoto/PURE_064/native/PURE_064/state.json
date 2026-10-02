@@ -1,0 +1,215 @@
+{
+  "case_id": "PURE_064",
+  "project_name": "PeaZip File and Archive Manager",
+  "initial_requirements": "Computer users need a cross-platform graphical file and archive manager that brings multiple open-source compression utilities behind one consistent interface. Users should be able to create, update, extract, inspect, split, join, compare, and securely delete files or archives, apply checksums, and protect archives with credentials. Settings should accommodate different preferences, while both inexperienced and advanced users can access appropriate management capabilities.",
+  "turns": [
+    {
+      "turn_id": 1,
+      "interviewer_utterance": "What specific actions and workflows should the file/archive manager support for users, including the most important operations such as creating, updating, extracting, inspecting, splitting, joining, comparing, and securely deleting files or archives, as well as applying checksums and password protection?",
+      "interviewee_utterance": "Users should be able to do the common archive tasks directly from the interface without having to open separate tools. In practice that means creating new archives, adding or updating files inside existing archives, extracting all or selected items, and inspecting an archive’s contents, properties, and compression details before opening it.\nIt should also support splitting large files or archives into parts, joining those parts back together, comparing files or archive contents to see what changed, and securely deleting sensitive files or archives when needed. For integrity and security, users should be able to generate and verify checksums, and create or open password-protected archives, including entering credentials when extracting or browsing protected content.",
+      "target_slots": [
+        "functional_needs"
+      ]
+    },
+    {
+      "turn_id": 2,
+      "interviewer_utterance": "Which user roles or stakeholder groups should this file and archive manager support, and how should their needs differ—for example, inexperienced users versus advanced users, administrators, or other specific roles?",
+      "interviewee_utterance": "We should definitely support at least two broad groups: inexperienced users and advanced users. Inexperienced users need a simple, guided interface with the most common actions easy to find, while advanced users need faster access to more detailed archive operations, settings, and format-specific options.\nIf administrators are in scope, they would mostly care about deployment, default settings, and maybe secure handling policies rather than day-to-day archiving. I don’t know yet whether we need separate role-based permissions in the product itself, so that would need to be confirmed.",
+      "target_slots": [
+        "stakeholder_roles"
+      ]
+    },
+    {
+      "turn_id": 3,
+      "interviewer_utterance": "What security policy controls should the application support for handling protected or sensitive archives—for example, should administrators be able to enforce default behaviors for opening, extracting, caching, retaining, or securely deleting archives, and restrict how credentials are used or stored?",
+      "interviewee_utterance": "Yes, I’d expect administrators to be able to set default security behaviors for sensitive archives, especially around prompting before opening or extracting, how long temporary files are kept, and whether secure deletion is required after use. I’d also expect controls for credential handling, such as whether passwords can be saved at all, whether they are stored only for the session, and whether the app can reuse them automatically.\nI’m not sure yet how granular those controls need to be, or whether they should be enforced globally or only as recommended defaults. That would need to be checked with the team.",
+      "target_slots": [
+        "security_policy_controls"
+      ]
+    },
+    {
+      "turn_id": 4,
+      "interviewer_utterance": "Should administrator-defined security behaviors for sensitive archives be enforced globally as mandatory policy, or configured as recommended defaults that users can override—and if enforcement varies, which settings must be non-overridable?",
+      "interviewee_utterance": "My expectation is that most of those should be enforceable as mandatory policy when an administrator needs to lock them down, especially in managed or corporate environments. Recommended defaults are useful for general deployments, but sensitive settings like saving credentials, bypassing warnings, retention of temporary data, and secure deletion behavior should be able to be made non-overridable if required.\nI’d say the exact split depends on how strict the deployment needs to be, and I’d want that clarified before we lock the design.",
+      "target_slots": [
+        "administrative_policy_scope"
+      ]
+    },
+    {
+      "turn_id": 5,
+      "interviewer_utterance": "What business rules should govern archive operations and security behavior in the application—for example, which actions are allowed or restricted for different user types, and under what conditions should operations such as password storage, secure deletion, temporary-file retention, or policy enforcement be applied?",
+      "interviewee_utterance": "The main business rule is that normal archive operations should be available to all users, but any sensitive behavior has to follow the configured security policy. So if the policy says no password storage, then the app must never save credentials; if it says secure deletion is required, then deletion flows should use that method by default and not offer a weaker alternative.\nFor temporary files and extracted content, retention should be limited by policy or by the user’s session settings, and anything left behind should be cleaned up automatically when the operation finishes or the session ends. I’d also expect administrators to be able to restrict certain actions for some user groups, but I don’t know the exact role matrix yet, so that part would need confirmation.",
+      "target_slots": [
+        "business_rules"
+      ]
+    },
+    {
+      "turn_id": 6,
+      "interviewer_utterance": "For temporary files and extracted content, which specific events should trigger automatic cleanup—such as completion of the operation, closing the archive, ending the session, application shutdown, or a configurable timeout—and should those triggers differ for sensitive versus non-sensitive data?",
+      "interviewee_utterance": "Automatic cleanup should definitely happen when the operation completes for temporary working files, and again when the user closes the archive or ends the session if anything is still left behind. Application shutdown should be a final safety net, and a configurable timeout makes sense for unused temporary content.\nYes, I’d expect the triggers to differ for sensitive data, with more aggressive cleanup and shorter retention than for ordinary files. For non-sensitive content, it can be a bit more flexible, but anything marked protected or handled under policy should be removed as soon as practical.",
+      "target_slots": [
+        "temp_data_cleanup_triggers"
+      ]
+    },
+    {
+      "turn_id": 7,
+      "interviewer_utterance": "What are the key data entities or information objects this application needs to manage, such as archives, files, parts, checksums, credentials, temporary items, settings, or policy records, and what important details should be stored for each?",
+      "interviewee_utterance": "The core entities are archives, files inside or outside archives, split parts, checksum records, credentials, temporary items, user settings, and policy records. For archives and files, we’d need basics like name, path, format, size, timestamps, status, and any encryption or compression details; for split parts, the part order, total parts, and linkage to the parent archive matter.\nChecksum records should store the algorithm, the generated value, and what file or archive it belongs to. Credentials, if they are stored at all, should be handled very carefully with scope and expiry information; temporary items should track where they are, why they were created, and when they must be deleted; settings and policy records should capture the configured values, who set them, and whether they are user preferences or enforced rules.",
+      "target_slots": [
+        "data_entities"
+      ]
+    },
+    {
+      "turn_id": 8,
+      "interviewer_utterance": "Which archive formats and operating systems should the application explicitly support, and how tightly should it integrate with the underlying open-source compression utilities—for example, should it expose all utility capabilities and format-specific options, or only a curated common subset behind the unified interface?",
+      "interviewee_utterance": "It should support the major archive formats that those open-source utilities already handle well, and it should be cross-platform on the main desktop operating systems, at least Windows, Linux, and macOS. I don’t know if there’s a commitment to every niche format or every OS variant, so that would need to be confirmed.\nMy preference would be a unified interface with a curated common subset for most users, but with advanced access to format-specific and utility-specific options for people who need them. That gives consistency without hiding the powerful features entirely.",
+      "target_slots": [
+        "supported_archive_formats",
+        "platform_compatibility_targets",
+        "integration_with_open_source_utilities"
+      ]
+    }
+  ],
+  "slots": [
+    {
+      "name": "project_goals",
+      "category": "goals",
+      "value": "Provide a cross-platform graphical file and archive manager that unifies common archive operations in one interface, including creating, updating, extracting, inspecting, splitting, joining, comparing, secure deletion, checksums, and password-protected archive handling."
+    },
+    {
+      "name": "stakeholder_roles",
+      "category": "stakeholders",
+      "value": "At least two primary user groups are in scope: inexperienced users, who need a simple guided interface with common actions easy to find, and advanced users, who need faster access to detailed archive operations, settings, and format-specific options. Administrators are also in scope for deployment, default settings, and secure handling policies, but role-based permissions in the product are not yet confirmed."
+    },
+    {
+      "name": "functional_needs",
+      "category": "functionality",
+      "value": "Users need to perform archive tasks directly in the interface without separate tools: create archives, add/update files in existing archives, extract all or selected items, inspect contents/properties/compression details, split and join files or archives, compare files or archive contents, securely delete sensitive files or archives, generate and verify checksums, and create/open password-protected archives with credential entry during extraction or browsing."
+    },
+    {
+      "name": "business_rules",
+      "category": "business_logic",
+      "value": "Normal archive operations should be available to all users, but any sensitive behavior must follow the configured security policy. If policy disallows password storage, the application must never save credentials. If secure deletion is required, deletion flows should use that method by default and not offer a weaker alternative. Temporary files and extracted content should have retention limited by policy or session settings, and leftover temporary data should be cleaned up automatically when the operation finishes, the archive is closed, the session ends, or the application shuts down. Administrators may also restrict certain actions for some user groups, though the exact role matrix is not yet defined."
+    },
+    {
+      "name": "data_entities",
+      "category": "data",
+      "value": "Core entities include archives, files, split parts, checksum records, credentials, temporary items, user settings, and policy records. Archives and files should track name, path, format, size, timestamps, status, and encryption/compression details. Split parts should include part order, total parts, and linkage to the parent archive. Checksum records should store algorithm, generated value, and related file/archive. Credentials should include scope and expiry if stored. Temporary items should track location, purpose, and deletion deadline. Settings and policy records should capture configured values, who set them, and whether they are user preferences or enforced rules."
+    },
+    {
+      "name": "constraints",
+      "category": "constraints",
+      "value": "The application should support the major archive formats handled by the underlying open-source compression utilities and be cross-platform on Windows, Linux, and macOS. It should present a unified interface with a curated common subset of capabilities for most users while still exposing advanced format-specific and utility-specific options for power users. Commitment to every niche format or every OS variant is not yet confirmed."
+    },
+    {
+      "name": "quality_concerns",
+      "category": "quality",
+      "value": "The user experience should be simple and guided for inexperienced users, with common actions easy to find, while still providing faster access to detailed settings and advanced options for experienced users. The interface should balance consistency with power, offering a curated default workflow without hiding advanced capabilities. No explicit performance or accessibility targets were provided yet."
+    },
+    {
+      "name": "boundary_conditions",
+      "category": "exceptions",
+      "value": "Temporary cleanup should occur on operation completion, archive close, session end, application shutdown, and after a configurable timeout for unused temporary content. Sensitive data should be cleaned up more aggressively than non-sensitive data, and anything protected or handled under policy should be removed as soon as practical."
+    },
+    {
+      "name": "security_policy_controls",
+      "category": "security",
+      "value": "Administrators should be able to define default security behaviors for sensitive archives, including prompting before opening or extracting, retention duration for temporary files, and whether secure deletion is required after use. Controls should also cover credential handling, such as whether passwords can be saved, stored only for the session, or reused automatically. Many of these controls should be enforceable as mandatory policy when needed, especially in managed or corporate environments, though they may also be used as recommended defaults depending on deployment."
+    },
+    {
+      "name": "credential_handling",
+      "category": "security",
+      "value": "The application should support password-protected archives and allow users to enter credentials when extracting or browsing protected content. Administrators may control whether passwords can be saved, stored only for the session, or reused automatically, and these settings may be enforceable as mandatory policy where required."
+    },
+    {
+      "name": "audit_logging_requirements",
+      "category": "compliance",
+      "value": null
+    },
+    {
+      "name": "data_loss_prevention_behavior",
+      "category": "security",
+      "value": "Sensitive archives should support secure deletion when needed, and administrators may be able to require secure deletion after use. The application should also support prompts before opening or extracting sensitive archives and manage temporary files carefully to reduce exposure, with some of these protections potentially enforceable as non-overridable policy."
+    },
+    {
+      "name": "administrative_policy_scope",
+      "category": "security",
+      "value": "Administrators can define default security behaviors for sensitive archives and may be able to enforce them globally in managed or corporate environments. The policy scope likely includes prompts before opening or extracting, temporary file retention, secure deletion behavior, and credential storage/reuse rules, with sensitive settings able to be made non-overridable if required."
+    },
+    {
+      "name": "temporary_file_retention_rules",
+      "category": "security",
+      "value": "Temporary files used while handling sensitive archives should have an administrator-configurable retention duration, and this retention behavior may be enforceable as mandatory policy."
+    },
+    {
+      "name": "credential_storage_lifecycle",
+      "category": "security",
+      "value": "Passwords may be saved, stored only for the session, or reused automatically depending on security policy. Administrators should be able to control and, where needed, enforce the lifecycle of stored credentials."
+    },
+    {
+      "name": "secure_deletion_enforcement_mode",
+      "category": "security",
+      "value": "Secure deletion should be configurable as an administrator policy and may be required after use. In managed deployments, secure deletion behavior should be enforceable as mandatory and non-overridable if needed."
+    },
+    {
+      "name": "temp_data_cleanup_triggers",
+      "category": "security",
+      "value": "Automatic cleanup should trigger when the operation completes, when the user closes the archive, when the session ends, on application shutdown as a final safety net, and after a configurable timeout for unused temporary content."
+    },
+    {
+      "name": "managed_deployment_policy_enforcement",
+      "category": "security",
+      "value": "In managed or corporate environments, administrators should be able to enforce security settings as mandatory policy, including credential storage rules, warning prompts, temporary data retention, and secure deletion behavior."
+    },
+    {
+      "name": "user_override_restrictions",
+      "category": "security",
+      "value": "Sensitive settings such as saving credentials, bypassing warnings, retention of temporary data, and secure deletion behavior may be made non-overridable when administrators need to lock them down."
+    },
+    {
+      "name": "supported_archive_formats",
+      "category": "constraints",
+      "value": "The application should support the major archive formats handled by the underlying open-source compression utilities, but support for every niche format is not yet confirmed."
+    },
+    {
+      "name": "platform_compatibility_targets",
+      "category": "constraints",
+      "value": "The application should be cross-platform on the main desktop operating systems, specifically Windows, Linux, and macOS."
+    },
+    {
+      "name": "integration_with_open_source_utilities",
+      "category": "constraints",
+      "value": "The application should provide a unified interface over the underlying open-source compression utilities, exposing a curated common subset for most users while allowing advanced users to access format-specific and utility-specific options."
+    },
+    {
+      "name": "performance_and_large_archive_handling",
+      "category": "quality",
+      "value": null
+    },
+    {
+      "name": "accessibility_and_usability_requirements",
+      "category": "quality",
+      "value": "The interface should be simple and guided for inexperienced users, with common actions easy to find, while advanced users should have faster access to detailed archive operations, settings, and format-specific options."
+    }
+  ],
+  "abduction_history": [
+    {
+      "surprising_fact": "The stakeholder singled out secure handling policies and credential-protected archive access, which suggests the product may need to handle sensitive data in environments where compliance or data-loss prevention matters more than a typical consumer file utility.",
+      "suspected_reason": "The manager is likely intended for organizational or mixed-security use, where administrators need to enforce safe defaults, control how protected archives are opened or retained, and reduce the risk of accidental exposure of confidential files.",
+      "new_slot": "security_policy_controls"
+    },
+    {
+      "surprising_fact": "The stakeholder introduced administrator-controlled security behaviors for sensitive archives, including prompts, temporary-file retention, secure deletion, and password storage/reuse policies, which suggests the application may be expected to operate in a higher-trust or regulated environment rather than as a simple standalone archive utility.",
+      "suspected_reason": "The product is likely intended for organizational deployment where IT or security teams need to reduce exposure of confidential data, standardize safe handling of protected archives, and balance usability with enforceable security defaults or policies.",
+      "new_slot": "administrative_policy_scope"
+    },
+    {
+      "surprising_fact": "The stakeholder emphasized that sensitive archive behavior must be mandatory and non-overridable in managed environments, and that temporary files and extracted content must be cleaned up automatically at operation finish or session end.",
+      "suspected_reason": "This suggests the application may be expected to operate in compliance-sensitive or endpoint-managed environments where minimizing data residue, enforcing policy, and preventing user bypass are more important than convenience.",
+      "new_slot": "temp_data_cleanup_triggers"
+    }
+  ],
+  "pending_question": null,
+  "pending_target_slots": [],
+  "is_finished": true
+}

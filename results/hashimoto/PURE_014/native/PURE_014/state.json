@@ -1,0 +1,376 @@
+{
+  "case_id": "PURE_014",
+  "project_name": "Automated HVAC Diagnostics",
+  "initial_requirements": "Building operators and facilities managers need an automated diagnostic tool that can detect and identify faults in HVAC components such as chillers and cooling-tower subsystems. The tool should combine sensed operating data with equipment specifications and configuration information, then present diagnostic results that help users monitor equipment condition. Service technicians and energy-service personnel may also use it during maintenance or remote supervision.",
+  "turns": [
+    {
+      "turn_id": 1,
+      "interviewer_utterance": "What are the primary outcomes you want this diagnostic tool to achieve for operators and technicians—for example, which HVAC faults should it detect first, what diagnostic actions or recommendations should it provide, and how should users use those results in their daily monitoring or maintenance work?",
+      "interviewee_utterance": "The main outcome is to help people spot problems early and quickly understand what part of the system is likely causing them, so they can act before the equipment performance degrades or a failure becomes obvious. I’d expect it to start with the high-value faults in chillers and cooling towers, like sensor issues, abnormal temperatures or pressures, poor heat transfer, valve or pump problems, fan or motor faults, and general efficiency losses.\nFor recommendations, it should give a clear likely fault, the evidence behind it, and a practical next step, like checking a sensor, inspecting a component, verifying setpoints, or scheduling maintenance. In daily use, operators would use it for routine monitoring and alarm triage, while technicians would use the same results to guide troubleshooting during site visits or remote diagnostics.",
+      "target_slots": [
+        "project_goals",
+        "functional_needs"
+      ]
+    },
+    {
+      "turn_id": 2,
+      "interviewer_utterance": "What rules or decision logic should the diagnostic tool follow when identifying and ranking faults—for example, how should it handle overlapping symptoms, confidence thresholds, repeated sensor anomalies, or cases where multiple possible faults could explain the same evidence?",
+      "interviewee_utterance": "It should use a layered approach so it can separate likely sensor problems from real equipment faults before it assigns blame to a component. If several faults fit the same symptoms, I’d want it to rank them by likelihood and impact, and clearly show when the result is ambiguous rather than forcing a single answer.\nRepeated sensor anomalies should probably be treated as a stronger signal only if they persist over time and line up with other operating data, otherwise the tool should flag them as possibly intermittent instrumentation issues. For confidence, I’d expect a threshold below which it just raises a warning or “needs review” state, and above that it can make a more specific diagnostic recommendation.",
+      "target_slots": [
+        "business_rules"
+      ]
+    },
+    {
+      "turn_id": 3,
+      "interviewer_utterance": "What specific input data sources and asset/context information should the diagnostic tool use—for example, which sensor points, equipment specifications, configuration details, operating modes, and site or environmental conditions are required to support reliable fault detection?",
+      "interviewee_utterance": "It should use the core operating sensor points for the chiller and cooling-tower subsystems, like temperatures, pressures, flow where available, valve positions, fan status, motor status, and power or current readings if the site has them. On the context side, it needs the equipment specifications, control sequence or configuration, setpoints, and what operating mode the asset is in, because the same readings mean different things depending on whether the unit is starting, running normally, or being staged off.\nIf available, ambient conditions and weather can help a lot too, especially for cooling-tower performance, and I’d also want basic asset metadata like make, model, capacity, and whether any components have been overridden or taken out of service.",
+      "target_slots": [
+        "diagnostic_input_data_sources",
+        "operational_environment_and_asset_context"
+      ]
+    },
+    {
+      "turn_id": 4,
+      "interviewer_utterance": "How should the diagnostic logic change its interpretation and fault ranking across different operating modes and temporary overrides—for example, what specific modes or states should it recognize, and how should it treat readings from components that are bypassed, overridden, or out of service?",
+      "interviewee_utterance": "It should recognize the main operating states that change the meaning of the readings, especially startup, normal run, standby, staging, shutdown, and any maintenance or test mode. In those cases, the same symptom may be expected or may indicate a fault only if it lasts beyond the normal transition period.\nIf a component is bypassed, manually overridden, or marked out of service, the tool should not rank faults on that component as strongly, because the data is no longer reliable for diagnosing normal performance. I’d still want it to note those conditions clearly and maybe lower confidence across related faults, since one overridden piece can affect the rest of the system’s behavior.",
+      "target_slots": [
+        "mode_aware_diagnostic_logic"
+      ]
+    },
+    {
+      "turn_id": 5,
+      "interviewer_utterance": "Should the diagnostic tool compare current readings against historical trends or learned baselines, and if so, what time horizon, comparison method, and baseline rules should it use to decide when performance has drifted enough to indicate a fault?",
+      "interviewee_utterance": "Yes, it should compare current behavior against both short-term history and a learned normal baseline, because a lot of HVAC issues show up as gradual drift before they turn into a hard fault. I’d expect it to look at recent trends over hours or days for immediate changes, and also compare against similar operating conditions over a longer period, like the same mode, load range, and weather band.\nThe baseline should be updated carefully so it doesn’t learn bad behavior as normal, and it should probably require a sustained deviation, not just a brief spike, before declaring a fault. If performance is drifting but not yet clearly broken, I’d want it to flag that as an early warning and rank it below a confirmed fault.",
+      "target_slots": [
+        "historical_trend_and_baseline_comparison"
+      ]
+    },
+    {
+      "turn_id": 6,
+      "interviewer_utterance": "When the tool presents a diagnosis, how should it explain its reasoning and tailor the level of detail for different users—for example, what evidence or traceability should be shown to support the fault conclusion, and should operators, facilities managers, and technicians see different explanation styles or depths?",
+      "interviewee_utterance": "Yes, the explanation should be different by user role. Operators need a short, practical summary with the suspected fault, confidence, and immediate action, while technicians should see the supporting evidence, the key sensor trends, the rule or pattern that triggered it, and any related conditions that help them verify it in the field.\nFacilities managers would probably want something in between, more focused on equipment condition, risk, and whether it needs scheduling or escalation. I’d also want the tool to show traceability back to the data it used, so users can see why it made the call instead of just seeing a black-box label.",
+      "target_slots": [
+        "diagnostic_explanation_traceability",
+        "explanation_detail_and_audience_tuning"
+      ]
+    },
+    {
+      "turn_id": 7,
+      "interviewer_utterance": "Should access to the diagnostic results, explanations, and any control or export functions vary by user role, and if so, what permissions should operators, facilities managers, technicians, and any other roles have?",
+      "interviewee_utterance": "Yes, access should vary by role. Operators should be able to view live diagnostics, explanations at a summary level, and acknowledge or comment on issues, but not change core rules or export sensitive data broadly. Facilities managers should have broader view and reporting access, including trends and historical summaries, while technicians should be able to see deeper diagnostics and export detailed evidence for troubleshooting.\nAny control functions, like changing thresholds or diagnostic settings, should be limited to authorized admin or engineering users. If we have remote service or energy-service staff, they should probably get access only to the assets they are assigned to, with export rights controlled by policy.",
+      "target_slots": [
+        "user_role_access_control"
+      ]
+    },
+    {
+      "turn_id": 8,
+      "interviewer_utterance": "Which existing systems should this diagnostic tool integrate with for day-to-day operations—such as BMS/SCADA, CMMS, alarms, work-order systems, or historian platforms—and what should each integration be used for (for example, reading data, pushing alerts, creating work orders, or syncing equipment records)?",
+      "interviewee_utterance": "It should definitely integrate with the BMS or SCADA system for live operating data and basic equipment status, and with the historian if one exists for trends and older data. It should also connect to the CMMS or work-order system so confirmed issues or high-priority diagnoses can be turned into maintenance requests instead of just sitting as alerts.\nFor alarms, I’d want it to push only meaningful notifications, not flood the operators with duplicates, and for equipment records it should sync asset IDs, points, and configuration details so the diagnostics stay aligned with what’s actually installed.",
+      "target_slots": [
+        "cmms_bms_integration_points"
+      ]
+    },
+    {
+      "turn_id": 9,
+      "interviewer_utterance": "For alerts and diagnostic updates, what should the tool do in terms of notification routing and escalation, and how quickly should it refresh or re-evaluate diagnostics when new data arrives—for example, should it send repeated alerts, suppress duplicates, escalate unresolved issues after a delay, or update results in real time versus on a scheduled interval?",
+      "interviewee_utterance": "It should notify the right people based on severity and asset ownership, with operators seeing immediate alerts for urgent conditions and facilities managers getting escalations if something stays unresolved. It should suppress duplicates so the same fault doesn’t keep spamming people, but it should re-open or re-alert if the condition clears and comes back.\nFor refresh timing, I’d want near real-time re-evaluation for active faults or important status changes, and a slower scheduled review for lower-priority trend checks. If an issue remains unresolved for a set period, it should escalate automatically rather than waiting for someone to notice it.",
+      "target_slots": [
+        "notification_and_escalation_rules",
+        "system_response_and_update_timing"
+      ]
+    },
+    {
+      "turn_id": 10,
+      "interviewer_utterance": "How should the learned normal baseline be governed over time—for example, what conditions should trigger a model refresh or retraining, what data or periods should be excluded so bad behavior is not learned as normal, and how should the system decide when a baseline has become stale or unreliable?",
+      "interviewee_utterance": "The baseline should refresh when the equipment has a real change in configuration, after maintenance that affects performance, or when the system sees that the current operating pattern no longer matches the old baseline for a sustained period. It should also be revisited periodically, but I’d prefer the system to wait for enough clean data rather than retrain too aggressively.\nIt should exclude periods with known faults, overrides, commissioning, shutdown transients, sensor failures, and any abnormal weather or operating conditions that don’t represent normal operation for that asset. If the baseline starts producing too many false alarms or stops matching the current data even in supposedly healthy periods, that’s a sign it has become stale and needs review.",
+      "target_slots": [
+        "baseline_governance_and_model_refresh_policy"
+      ]
+    },
+    {
+      "turn_id": 11,
+      "interviewer_utterance": "For baseline learning and model refresh, how should the system define and recognize the periods or conditions that must be excluded from training data—for example commissioning, shutdown transients, maintenance, sensor failures, overrides, or abnormal weather—and are there any specific time windows, event markers, or site rules it should use to decide when data is clean enough to learn from?",
+      "interviewee_utterance": "Yes, it should rely on event markers where possible, like maintenance logs, occupancy or schedule changes, manual overrides, and known equipment state changes from the BMS or CMMS. Where we don’t have explicit markers, it should use simple site rules, like excluding startup and shutdown windows, periods with unstable sensor readings, or data right after a reset or repair.\nI’d also want a short stabilization period after commissioning or maintenance before any data is considered clean enough to learn from, but the exact window probably needs to be site-specific. For abnormal weather, I think the system should either tag those periods separately or keep them out of the baseline unless we explicitly want a weather-adjusted model.",
+      "target_slots": [
+        "baseline_exclusion_period_definitions"
+      ]
+    }
+  ],
+  "slots": [
+    {
+      "name": "project_goals",
+      "category": "goals",
+      "value": "Help people spot problems early and quickly understand what part of the system is likely causing them so they can act before equipment performance degrades or a failure becomes obvious."
+    },
+    {
+      "name": "stakeholder_roles",
+      "category": "stakeholders",
+      "value": "Building operators, facilities managers, service technicians, and energy-service personnel. Operators use it for routine monitoring and alarm triage; technicians use the same results to guide troubleshooting during site visits or remote diagnostics."
+    },
+    {
+      "name": "functional_needs",
+      "category": "functionality",
+      "value": "Detect and identify high-value faults in chillers and cooling towers, including sensor issues, abnormal temperatures or pressures, poor heat transfer, valve or pump problems, fan or motor faults, and general efficiency losses. Provide a clear likely fault, supporting evidence, and a practical next step such as checking a sensor, inspecting a component, verifying setpoints, or scheduling maintenance."
+    },
+    {
+      "name": "business_rules",
+      "category": "business_logic",
+      "value": "Use a layered approach to distinguish sensor problems from true equipment faults before assigning blame. If multiple faults explain the same symptoms, rank them by likelihood and impact and clearly indicate ambiguity rather than forcing a single answer. Treat repeated sensor anomalies as stronger evidence only when they persist over time and align with other operating data. Apply a confidence threshold so low-confidence results are flagged as warning or needs review, while higher-confidence results can produce specific diagnostic recommendations."
+    },
+    {
+      "name": "data_entities",
+      "category": "data",
+      "value": "Core operating sensor points for chiller and cooling-tower subsystems, including temperatures, pressures, flow where available, valve positions, fan status, motor status, and power or current readings. Also include equipment specifications, control sequence/configuration, setpoints, operating mode, ambient conditions and weather when available, and asset metadata such as make, model, capacity, and overridden or out-of-service components."
+    },
+    {
+      "name": "constraints",
+      "category": "constraints",
+      "value": "Use event markers where possible, such as maintenance logs, occupancy or schedule changes, manual overrides, and known equipment state changes from BMS or CMMS. Where explicit markers are unavailable, exclude startup and shutdown windows, unstable sensor readings, and data immediately after a reset or repair. Apply a short stabilization period after commissioning or maintenance before data is considered clean enough for learning, with the exact window site-specific. Treat abnormal weather separately or exclude it from the baseline unless a weather-adjusted model is explicitly desired."
+    },
+    {
+      "name": "quality_concerns",
+      "category": "quality",
+      "value": "Compare current behavior against short-term history and a learned normal baseline, using recent trends over hours or days and similar operating conditions over a longer period. Update baselines carefully so bad behavior is not learned as normal, require sustained deviation rather than brief spikes, and flag drifting performance as an early warning below confirmed faults."
+    },
+    {
+      "name": "boundary_conditions",
+      "category": "exceptions",
+      "value": "Diagnostic interpretation depends on operating mode, since the same readings mean different things when the unit is starting, running normally, or staged off. Results should account for overridden or out-of-service components."
+    },
+    {
+      "name": "diagnostic_output_format",
+      "category": "user_interface",
+      "value": "Show a clear likely fault with the evidence behind it and a practical next step. When confidence is low, present a warning or needs-review state; when multiple faults fit, show ranked alternatives and indicate ambiguity."
+    },
+    {
+      "name": "alert_and_triage_workflow",
+      "category": "workflow",
+      "value": "Operators use the tool for routine monitoring and alarm triage, while technicians use the results for troubleshooting during site visits or remote diagnostics."
+    },
+    {
+      "name": "maintenance_action_guidance",
+      "category": "functionality",
+      "value": "Provide a clear likely fault, the evidence behind it, and a practical next step such as checking a sensor, inspecting a component, verifying setpoints, or scheduling maintenance."
+    },
+    {
+      "name": "fault_priority_criteria",
+      "category": "business_logic",
+      "value": "Rank competing faults by likelihood and impact. Use confidence thresholds to determine whether to issue a specific diagnostic recommendation or a warning/needs-review state."
+    },
+    {
+      "name": "equipment_scope_and_asset_hierarchy",
+      "category": "data",
+      "value": "Start with high-value faults in chillers and cooling-tower subsystems."
+    },
+    {
+      "name": "diagnostic_input_data_sources",
+      "category": "data",
+      "value": "Use core operating sensor points plus equipment specifications, control sequence/configuration, setpoints, operating mode, ambient conditions and weather when available, and asset metadata."
+    },
+    {
+      "name": "sensor_and_tag_normalization_rules",
+      "category": "constraints",
+      "value": null
+    },
+    {
+      "name": "fault_model_update_and_learning_policy",
+      "category": "business_logic",
+      "value": "Compare current behavior against short-term history and a learned normal baseline using similar operating conditions. Update baselines carefully to avoid learning abnormal behavior, and require sustained deviation before declaring a fault. Use early-warning status for drift that is not yet a confirmed fault."
+    },
+    {
+      "name": "integration_and_export_interfaces",
+      "category": "workflow",
+      "value": "Integrate with BMS or SCADA for live operating data and equipment status, with a historian for trends and historical data, and with CMMS or work-order systems so confirmed or high-priority diagnoses can become maintenance requests. Sync asset IDs, points, and configuration details, and avoid duplicate alert flooding."
+    },
+    {
+      "name": "operational_environment_and_asset_context",
+      "category": "data",
+      "value": "Include equipment specifications, control sequence or configuration, setpoints, operating mode, ambient conditions and weather when available, and basic asset metadata such as make, model, capacity, and whether components have been overridden or taken out of service."
+    },
+    {
+      "name": "mode_aware_diagnostic_logic",
+      "category": "business_logic",
+      "value": "Recognize startup, normal run, standby, staging, shutdown, maintenance, and test mode. Interpret readings differently depending on the operating state, since some symptoms may be expected during transitions and only indicate a fault if they persist beyond the normal transition period."
+    },
+    {
+      "name": "override_and_out_of_service_handling",
+      "category": "exceptions",
+      "value": "If a component is bypassed, manually overridden, or marked out of service, do not rank faults on that component as strongly. Note those conditions clearly and lower confidence across related faults because the affected data may not be reliable for normal performance diagnosis."
+    },
+    {
+      "name": "operating_state_classification",
+      "category": "functionality",
+      "value": "Classify the asset into main operating states such as startup, normal run, standby, staging, shutdown, maintenance, and test mode so diagnostic interpretation can adjust to the current state."
+    },
+    {
+      "name": "diagnostic_explanation_traceability",
+      "category": "quality",
+      "value": "Show traceability back to the data and rules used for the diagnosis. Operators should see a short practical summary with suspected fault, confidence, and immediate action; technicians should see supporting evidence, key sensor trends, triggered rules or patterns, and related conditions; facilities managers should see an intermediate level focused on equipment condition, risk, and whether escalation or scheduling is needed."
+    },
+    {
+      "name": "alert_delivery_and_notification_channels",
+      "category": "workflow",
+      "value": "Push only meaningful notifications and avoid flooding operators with duplicate alerts."
+    },
+    {
+      "name": "historical_trend_and_baseline_comparison",
+      "category": "functionality",
+      "value": "Compare current behavior against short-term history and a learned normal baseline, using recent trends over hours or days and similar operating conditions over a longer period. Require sustained deviation rather than a brief spike, and flag drifting performance as an early warning when it is not yet a confirmed fault."
+    },
+    {
+      "name": "recommendation_severity_and_escalation_policy",
+      "category": "business_logic",
+      "value": "Use a confidence threshold to separate warning or needs-review results from specific diagnostic recommendations. Rank ambiguous multi-fault cases by likelihood and impact, and treat early drift as a lower-severity warning below confirmed faults."
+    },
+    {
+      "name": "system_response_and_update_timing",
+      "category": "constraints",
+      "value": "Use near real-time re-evaluation for active faults or important status changes, slower scheduled review for lower-priority trend checks, and automatic escalation if an issue remains unresolved for a set period."
+    },
+    {
+      "name": "explanation_detail_and_audience_tuning",
+      "category": "user_interface",
+      "value": "Tailor explanation depth by role: operators get a short, practical summary with suspected fault, confidence, and immediate action; technicians get supporting evidence, trends, triggered rules or patterns, and related conditions; facilities managers get an intermediate level focused on condition, risk, and scheduling or escalation."
+    },
+    {
+      "name": "data_quality_and_missing_point_handling",
+      "category": "constraints",
+      "value": null
+    },
+    {
+      "name": "deployment_and_integration_environment",
+      "category": "workflow",
+      "value": "Integrate with BMS or SCADA for live operating data and equipment status, with a historian for trends and older data, and with CMMS or work-order systems so confirmed issues or high-priority diagnoses can be turned into maintenance requests. Push only meaningful notifications, avoid duplicate alert flooding, and sync asset IDs, points, and configuration details."
+    },
+    {
+      "name": "notification_and_escalation_rules",
+      "category": "workflow",
+      "value": "Notify the right people based on severity and asset ownership, with operators receiving immediate alerts for urgent conditions and facilities managers getting escalations if an issue stays unresolved. Suppress duplicate alerts, re-open or re-alert if the condition clears and returns, and escalate unresolved issues automatically after a delay."
+    },
+    {
+      "name": "user_role_access_control",
+      "category": "constraints",
+      "value": "Access should vary by role. Operators can view live diagnostics, summary explanations, and acknowledge or comment on issues, but cannot change core rules or broadly export sensitive data. Facilities managers have broader view and reporting access, including trends and historical summaries. Technicians can see deeper diagnostics and export detailed evidence for troubleshooting. Control functions such as changing thresholds or diagnostic settings are limited to authorized admin or engineering users. Remote service or energy-service staff should only access assigned assets, with export rights controlled by policy."
+    },
+    {
+      "name": "diagnostic_audit_trail_retention",
+      "category": "quality",
+      "value": null
+    },
+    {
+      "name": "explanation_trace_elements",
+      "category": "functionality",
+      "value": "Include the supporting evidence, key sensor trends, triggered rules or patterns, related conditions, confidence, and immediate action or recommendation, with depth adjusted by user role."
+    },
+    {
+      "name": "cmms_bms_integration_points",
+      "category": "workflow",
+      "value": "Integrate with BMS or SCADA for live operating data and equipment status, with a historian for trends and historical data, and with CMMS or work-order systems so confirmed or high-priority diagnoses can become maintenance requests. Sync asset IDs, points, and configuration details."
+    },
+    {
+      "name": "alert_routing_and_acknowledgement_flow",
+      "category": "workflow",
+      "value": "Operators should be able to acknowledge or comment on issues, alerts should be routed based on severity and asset ownership, and duplicate flooding should be avoided."
+    },
+    {
+      "name": "audit_trail_and_action_history_retention",
+      "category": "quality",
+      "value": null
+    },
+    {
+      "name": "export_scope_and_sensitive_data_controls",
+      "category": "constraints",
+      "value": "Operators should not export sensitive data broadly. Technicians can export detailed evidence for troubleshooting. Remote service or energy-service staff should only access assigned assets, with export rights controlled by policy."
+    },
+    {
+      "name": "baseline_governance_and_model_refresh_policy",
+      "category": "business_logic",
+      "value": "Refresh the baseline when there is a real configuration change, after maintenance that affects performance, or when the current operating pattern no longer matches the old baseline for a sustained period. Revisit periodically but wait for enough clean data. Exclude known faults, overrides, commissioning, shutdown transients, sensor failures, and abnormal weather or operating conditions. If the baseline causes too many false alarms or no longer matches healthy data, treat it as stale and require review."
+    },
+    {
+      "name": "seasonal_and_weather_normalization_rules",
+      "category": "constraints",
+      "value": "Use similar operating conditions over a longer period, including the same mode, load range, and weather band, and exclude abnormal weather or operating conditions that do not represent normal operation for the asset."
+    },
+    {
+      "name": "fault_drift_and_degradation_classification",
+      "category": "functionality",
+      "value": "Flag performance that is drifting but not yet clearly broken as an early warning, and rank it below a confirmed fault."
+    },
+    {
+      "name": "historical_data_retention_and_windowing_policy",
+      "category": "quality",
+      "value": "Use recent trends over hours or days for immediate changes and compare against similar operating conditions over a longer period; revisit baselines periodically and wait for enough clean data before retraining."
+    },
+    {
+      "name": "baseline_exclusion_period_definitions",
+      "category": "constraints",
+      "value": "Exclude commissioning, maintenance, startup and shutdown windows, unstable sensor periods, post-reset or post-repair data, and periods identified by maintenance logs, occupancy/schedule changes, manual overrides, or known equipment state changes."
+    },
+    {
+      "name": "commissioning_and_retest_handling",
+      "category": "exceptions",
+      "value": "After commissioning or maintenance, hold data out of learning until a short stabilization period has passed; do not use those periods for baseline training or fault inference until the site-specific clean-data window is satisfied."
+    },
+    {
+      "name": "weather_and_abnormal_condition_filtering",
+      "category": "constraints",
+      "value": "Tag abnormal weather periods separately or exclude them from the baseline unless a weather-adjusted model is explicitly requested."
+    },
+    {
+      "name": "baseline_staleness_detection_thresholds",
+      "category": "business_logic",
+      "value": "Treat the baseline as stale when it starts producing too many false alarms or no longer matches healthy data and operating patterns over a sustained period; then require review and refresh only after enough clean data is available."
+    },
+    {
+      "name": "site_specific_clean_data_window_policy",
+      "category": "constraints",
+      "value": null
+    },
+    {
+      "name": "event_marker_configuration_and_priority_rules",
+      "category": "constraints",
+      "value": null
+    },
+    {
+      "name": "commissioning_and_maintenance_stabilization_criteria",
+      "category": "quality",
+      "value": null
+    }
+  ],
+  "abduction_history": [
+    {
+      "surprising_fact": "The tool must interpret the same readings differently depending on operating mode, and also account for overridden or out-of-service components when diagnosing faults.",
+      "suspected_reason": "The HVAC system likely has dynamic control states and temporary maintenance bypasses that can make normal sensor patterns look faulty. The diagnostic logic therefore needs explicit mode- and configuration-awareness to avoid false positives and misattributing symptoms to components that are intentionally disabled or overridden.",
+      "new_slot": "mode_aware_diagnostic_logic"
+    },
+    {
+      "surprising_fact": "The tool needs to explain diagnoses differently for operators, technicians, and facilities managers, with traceability back to the data and rules used.",
+      "suspected_reason": "Different user groups likely make different operational decisions from the same diagnosis, so the system needs role-specific explanations to support fast triage for operators, field troubleshooting for technicians, and risk/escalation decisions for managers while maintaining trust and auditability.",
+      "new_slot": "user_role_access_control"
+    },
+    {
+      "surprising_fact": "The diagnostic tool is expected to use live diagnostics, acknowledgements/comments, detailed evidence export, and role-based access control, but the required integrations, notification path, and audit/retention behavior are still unspecified.",
+      "suspected_reason": "This suggests the system is intended to fit into an operational workflow rather than just provide standalone analytics. That usually means it must integrate with existing BMS/CMMS or monitoring tools, support alert distribution to the right people, and preserve an audit trail for accountability, troubleshooting, and compliance.",
+      "new_slot": "cmms_bms_integration_points"
+    },
+    {
+      "surprising_fact": "The tool is expected to compare current behavior against both short-term history and a learned baseline, while carefully avoiding learning bad behavior as normal.",
+      "suspected_reason": "This suggests the HVAC sites may have long-lived drift, recurring seasonal patterns, or operational workarounds that can distort simple threshold logic. The system likely needs stronger baseline governance, drift control, and history management so it can detect degradation early without normalizing faults or stale operating conditions.",
+      "new_slot": "baseline_governance_and_model_refresh_policy"
+    },
+    {
+      "surprising_fact": "The project now needs to exclude commissioning periods, shutdown transients, sensor failures, and abnormal weather or operating conditions from baseline learning, and to treat a stale baseline as a review condition when it starts generating too many false alarms.",
+      "suspected_reason": "This suggests the system will operate across sites with frequent configuration changes and non-normal operating periods that can distort model training. The business likely needs governance around when historical data is considered trustworthy so the diagnostic engine does not normalize faults, commissioning behavior, or weather-driven anomalies as healthy operation.",
+      "new_slot": "baseline_exclusion_period_definitions"
+    },
+    {
+      "surprising_fact": "The tool is expected to exclude many specific event-based periods from learning, but the stakeholder also says the exact post-commissioning or post-maintenance stabilization window must be site-specific rather than fixed.",
+      "suspected_reason": "This suggests the same HVAC diagnostic logic will be deployed across sites with different equipment ages, commissioning quality, control tuning, and maintenance practices, so a one-size-fits-all clean-data window would either learn too early or delay model usefulness unnecessarily. The system likely needs configurable data-quality gating and site-level operational rules to decide when data is trustworthy enough for baselines and diagnostics.",
+      "new_slot": "site_specific_clean_data_window_policy"
+    }
+  ],
+  "pending_question": null,
+  "pending_target_slots": [],
+  "is_finished": true
+}

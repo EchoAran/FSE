@@ -1,0 +1,771 @@
+"""
+Plot Script for Motivation Case Study Figure (FSE Paper)
+Streamlined, high-aesthetic publication diagram focused purely on the motivating example.
+Features inline vector SVG avatars for Developer & Assistant, clean code diff,
+and concise annotations.
+Outputs: HTML, high-res PNG, and PDF.
+"""
+
+from __future__ import annotations
+import subprocess
+from pathlib import Path
+
+OUTPUT_DIR = Path(__file__).resolve().parent
+HTML_PATH = OUTPUT_DIR / "motivation_case_study.html"
+PNG_PATH = OUTPUT_DIR / "motivation_case_study.png"
+PDF_PATH = OUTPUT_DIR / "motivation_case_study.pdf"
+
+EDGE_PATH = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+
+HTML_CONTENT = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    background-color: #ffffff;
+    color: #0f172a;
+    padding: 16px;
+    width: 1440px;
+    margin: 0 auto;
+  }
+
+  /* Figure Card */
+  .figure-card {
+    border: 1.5px solid #cbd5e1;
+    border-radius: 12px;
+    background: #ffffff;
+    padding: 18px 20px 16px 20px;
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Figure Header */
+  .figure-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1.5px solid #e2e8f0;
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+  }
+  .figure-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .figure-title .fig-num {
+    background: #1e293b;
+    color: #ffffff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12.5px;
+    letter-spacing: 0.5px;
+  }
+  .figure-meta {
+    font-size: 11.5px;
+    color: #64748b;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    background: #f8fafc;
+    padding: 3px 10px;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+  }
+
+  /* Flow Steps Header Bar */
+  .process-bar {
+    display: grid;
+    grid-template-columns: 1fr 32px 1.05fr 32px 1.05fr;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .step-tab {
+    padding: 7px 12px;
+    border-radius: 6px;
+    font-size: 12.5px;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .step-tab.t1 { background: #f1f5f9; color: #334155; border: 1px solid #cbd5e1; }
+  .step-tab.t2 { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+  .step-tab.t3 { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+  
+  .step-arrow-svg {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #94a3b8;
+  }
+
+  .stage-tag {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .t1 .stage-tag { background: #e2e8f0; color: #475569; }
+  .t2 .stage-tag { background: #fde047; color: #854d0e; }
+  .t3 .stage-tag { background: #6ee7b7; color: #064e3b; }
+
+  /* 3-Column Layout */
+  .grid-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.05fr 1.05fr;
+    gap: 14px;
+  }
+
+  /* Column Box */
+  .col-box {
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #fafafa;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .col-box.c1 { border-color: #cbd5e1; background: #f8fafc; }
+  .col-box.c2 { border-color: #fed7aa; background: #fffcf8; }
+  .col-box.c3 { border-color: #a7f3d0; background: #f7fdf9; }
+
+  .col-top-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Conversation Item */
+  .turn-card {
+    background: #ffffff;
+    border-radius: 7px;
+    border: 1px solid #e2e8f0;
+    padding: 9px 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+  .turn-card.highlight-anchor {
+    border-color: #fca5a5;
+    background: #fffbfa;
+  }
+  .turn-card.highlight-revision {
+    border-color: #86efac;
+    background: #fcfffd;
+  }
+
+  /* Turn Header with Vector Avatar */
+  .turn-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .avatar-role-group {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .avatar-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .avatar-dev {
+    background: #0284c7;
+    color: #ffffff;
+  }
+  .avatar-gpt {
+    background: #10a37f;
+    color: #ffffff;
+  }
+  .role-title {
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #1e293b;
+  }
+  .turn-id {
+    font-size: 10.5px;
+    color: #64748b;
+    font-weight: 600;
+  }
+
+  /* Badge styling */
+  .badge {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.2px;
+  }
+  .badge-anchor { background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; }
+  .badge-revised-title { background: #dcfce7; color: #15803d; border: 1px solid #86efac; }
+  .badge-dev-init { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+
+  /* Speech / Prompt Bubble */
+  .prompt-bubble {
+    font-size: 11.5px;
+    color: #334155;
+    background: #f1f5f9;
+    border-left: 3px solid #0284c7;
+    padding: 6px 9px;
+    border-radius: 0 5px 5px 0;
+    line-height: 1.45;
+  }
+  .prompt-bubble.prompt-c2 {
+    border-left-color: #f59e0b;
+    background: #fefce8;
+  }
+
+  /* Code Container */
+  .code-box {
+    background: #0f172a;
+    color: #e2e8f0;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: "JetBrains Mono", Consolas, Menlo, Monaco, monospace;
+    font-size: 11px;
+    line-height: 1.48;
+  }
+  .code-kw { color: #f472b6; font-weight: 600; }
+  .code-var { color: #38bdf8; }
+  .code-fn { color: #a78bfa; }
+  .code-sym { color: #facc15; }
+  .code-note { color: #64748b; font-size: 9.5px; font-style: italic; }
+
+  /* Diff Lines */
+  .line-unscoped {
+    background: rgba(239, 68, 68, 0.2);
+    border-left: 3px solid #ef4444;
+    padding: 2px 5px;
+    margin: 2px -5px;
+    border-radius: 2px;
+    display: block;
+  }
+  .line-revised {
+    background: rgba(16, 185, 129, 0.22);
+    border-left: 3px solid #10b981;
+    padding: 2px 5px;
+    margin: 2px -5px;
+    border-radius: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .hl-u1 { background: rgba(194, 84, 63, 0.35); border-bottom: 1.5px solid #c2543f; padding: 0 3px; border-radius: 2px; }
+  .hl-u2 { background: rgba(194, 84, 63, 0.35); border-bottom: 1.5px solid #c2543f; padding: 0 3px; border-radius: 2px; }
+  .hl-u3 { background: rgba(217, 119, 6, 0.35); border-bottom: 1.5px solid #d97706; padding: 0 3px; border-radius: 2px; }
+
+  /* Unit Markers */
+  .marker {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: 700;
+    color: #ffffff;
+    padding: 1px 4px;
+    border-radius: 3px;
+    line-height: 1.2;
+  }
+  .marker-u1 { background: #c2543f; }
+  .marker-u2 { background: #c2543f; }
+  .marker-u3 { background: #d97706; }
+  .marker-group { display: flex; gap: 3px; }
+
+  /* Concise Summary Strip */
+  .summary-strip {
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+  .strip-warn {
+    background: #fff1f2;
+    border: 1px solid #fecdd3;
+    color: #9f1239;
+  }
+  .strip-warn strong { color: #881337; }
+
+  /* LSRI Unit Rows */
+  .lsri-container {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .lsri-row {
+    background: #ffffff;
+    border: 1px solid #fed7aa;
+    border-radius: 5px;
+    padding: 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .lsri-row.border-revised { border-left: 3.5px solid #c2543f; }
+  .lsri-row.border-extended { border-left: 3.5px solid #d97706; }
+
+  .lsri-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .lsri-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .lsri-tag-group {
+    display: flex;
+    gap: 4px;
+  }
+  .tag-type {
+    background: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+  .tag-eeo {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+  .tag-rev {
+    background: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+  .tag-ext {
+    background: #fef9c3;
+    color: #854d0e;
+    border: 1px solid #fef08a;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+  .lsri-text {
+    font-size: 10.5px;
+    color: #475569;
+    line-height: 1.35;
+  }
+  .lsri-text code {
+    background: #f1f5f9;
+    padding: 0 3px;
+    border-radius: 3px;
+    font-size: 10px;
+    color: #0f172a;
+  }
+
+  /* Earlier Elicitation Callout */
+  .elicit-callout {
+    background: #eff6ff;
+    border: 1.5px dashed #60a5fa;
+    border-radius: 6px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .elicit-header {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1d4ed8;
+  }
+  .elicit-bubble {
+    background: #ffffff;
+    border: 1px solid #bfdbfe;
+    border-radius: 4px;
+    padding: 5px 8px;
+    font-size: 10.5px;
+    color: #1e40af;
+    font-style: italic;
+    line-height: 1.38;
+  }
+
+  /* Diff Explanation Strip */
+  .diff-explain {
+    background: #ffffff;
+    border: 1px solid #bbf7d0;
+    border-radius: 6px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .diff-item {
+    font-size: 10.5px;
+    color: #334155;
+    line-height: 1.38;
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+  }
+  .diff-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-top: 5px;
+    flex-shrink: 0;
+  }
+  .dot-red { background: #ef4444; }
+  .dot-amber { background: #d97706; }
+
+  /* Takeaway Box */
+  .takeaway-bar {
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 10.5px;
+    color: #166534;
+    line-height: 1.4;
+  }
+  .takeaway-bar strong { color: #14532d; }
+
+</style>
+</head>
+<body>
+
+<div class="figure-card">
+
+  <!-- Header -->
+  <div class="figure-header">
+    <div class="figure-title">
+      <span class="fig-num">Figure 1</span>
+      <span>Solution Revision Following Later-Stated Constraints (Motivating Case Study)</span>
+    </div>
+    <div class="figure-meta">
+      DevGPT: dbabf0000e0074344046 &nbsp;|&nbsp; XpenseTrackr Issue #35
+    </div>
+  </div>
+
+  <!-- Flow Bar -->
+  <div class="process-bar">
+    <div class="step-tab t1">
+      <span>1. Initial Prompt &amp; Solution Anchor</span>
+      <span class="stage-tag">Turn 1 (D0001 → A0001)</span>
+    </div>
+    <div class="step-arrow-svg">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+    </div>
+    <div class="step-tab t2">
+      <span>2. Later-Stated Constraints (LSRI)</span>
+      <span class="stage-tag">Turn 2 (D0002)</span>
+    </div>
+    <div class="step-arrow-svg">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+        <polyline points="12 5 19 12 12 19"></polyline>
+      </svg>
+    </div>
+    <div class="step-tab t3">
+      <span>3. Solution Revision &amp; Extension</span>
+      <span class="stage-tag">Turn 2 (A0002)</span>
+    </div>
+  </div>
+
+  <!-- 3-Column Content Layout -->
+  <div class="grid-layout">
+
+    <!-- Column 1: Initial Prompt & Anchor -->
+    <div class="col-box c1">
+      <div class="col-top-group">
+        <!-- D0001 -->
+        <div class="turn-card">
+          <div class="turn-header">
+            <div class="avatar-role-group">
+              <div class="avatar-icon avatar-dev">
+                <!-- Developer SVG Icon -->
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+              <span class="role-title">Developer</span>
+            </div>
+            <span class="turn-id">Turn D0001</span>
+          </div>
+          <div class="prompt-bubble">
+            "how to implement filter by date option (default is this month's expenses) in ruby on rails?"<br>
+            <span style="font-size: 10px; color: #64748b;">[Attached partial view <code>_expenses_table.html.erb</code>]</span>
+          </div>
+        </div>
+
+        <!-- A0001 -->
+        <div class="turn-card highlight-anchor">
+          <div class="turn-header">
+            <div class="avatar-role-group">
+              <div class="avatar-icon avatar-gpt">
+                <!-- ChatGPT Vector Icon -->
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M21.2 9.8a5.5 5.5 0 0 0-.46-4.46 5.6 5.6 0 0 0-5.18-2.92 5.54 5.54 0 0 0-3.56 1.3 5.53 5.53 0 0 0-8.2 2.7 5.5 5.5 0 0 0-2.3 4.27c0 1.25.4 2.45 1.15 3.44a5.5 5.5 0 0 0 .46 4.46 5.6 5.6 0 0 0 5.18 2.92 5.54 5.54 0 0 0 3.56-1.3 5.53 5.53 0 0 0 8.2-2.7 5.5 5.5 0 0 0 2.3-4.27c0-1.25-.4-2.45-1.15-3.44zm-7.66 10.7a4.2 4.2 0 0 1-2.4-.74l.13-.08 3.96-2.28a.7.7 0 0 0 .36-.62v-4.57l1.37.79v4.54a4.23 4.23 0 0 1-3.42 2.96zm-7.6-3.32a4.19 4.19 0 0 1-.5-2.47c0-.52.1-1.03.28-1.51l.13.08 3.96 2.29c.2.11.45.11.64 0l3.96-2.29v1.58l-3.93 2.27a4.22 4.22 0 0 1-4.54.05zm-1.42-7.53a4.2 4.2 0 0 1 1.9-1.74l-.13.08-3.96 2.28a.7.7 0 0 0-.36.62v4.57l-1.37-.79V10.2c.03-.53.18-1.05.45-1.52zm12.33 1.34l-3.96-2.29a.69.69 0 0 0-.64 0l-3.96 2.29v-1.58l3.93-2.27a4.23 4.23 0 0 1 4.63.18 4.2 4.2 0 0 1 1.42 3.12v.55zm2.75 3.32a4.2 4.2 0 0 1-.28 1.51l-.13-.08-3.96-2.29a.7.7 0 0 0-.64 0l-3.96 2.29v-1.58l3.93-2.27a4.22 4.22 0 0 1 4.54-.05c.34.45.5 1 .5 1.57zm-6.17-1.36l-1.85-1.07 1.85-1.07 1.85 1.07-1.85 1.07z"/>
+                </svg>
+              </div>
+              <span class="role-title">ChatGPT</span>
+            </div>
+            <span class="badge badge-anchor">Solution Anchor</span>
+          </div>
+
+          <div class="code-box">
+            <span class="code-note">// [Date range calculation omitted]</span><br>
+            <span class="code-kw">def</span> <span class="code-fn">index</span><br>
+            &nbsp;&nbsp;<span class="line-unscoped">
+              <span class="code-var">@expenses</span> = <span class="code-fn">Expense</span>.<span class="code-fn">where</span>(<span class="code-sym">datetime:</span> start_date..end_date)
+            </span>
+            <span class="code-kw">end</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Concise Defect Note -->
+      <div class="summary-strip strip-warn">
+        <strong>⚠️ Unconstrained Global Solution:</strong><br>
+        Directly queries all <code>Expense</code> records without scoping to the logged-in user, unauthenticated handling, or ordering.
+      </div>
+
+    </div>
+
+    <!-- Column 2: Turn 2 LSRI Constraints & Missed Elicitation -->
+    <div class="col-box c2">
+      <div class="col-top-group">
+        <!-- D0002 -->
+        <div class="turn-card">
+          <div class="turn-header">
+            <div class="avatar-role-group">
+              <div class="avatar-icon avatar-dev">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                  <circle cx="12" cy="7" r="4"></circle>
+                </svg>
+              </div>
+              <span class="role-title">Developer</span>
+            </div>
+            <span class="badge badge-dev-init">Developer-initiated</span>
+          </div>
+          <div class="prompt-bubble prompt-c2">
+            "here is expenses_controller"
+          </div>
+
+          <div class="code-box">
+            <span class="code-kw">def</span> <span class="code-fn">index</span><br>
+            &nbsp;&nbsp;<span class="code-var">@expenses</span> = <span class="code-fn">user_signed_in?</span> ?<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="hl-u1"><span class="code-var">current_user</span>.<span class="code-fn">expenses</span></span>.<span class="hl-u3"><span class="code-fn">order</span>(...)</span> : <span class="hl-u2"><span class="code-fn">Expense</span>.<span class="code-fn">none</span></span><br>
+            <span class="code-kw">end</span>
+          </div>
+        </div>
+
+        <!-- LSRI List -->
+        <div class="lsri-container">
+          <!-- U1 -->
+          <div class="lsri-row border-revised">
+            <div class="lsri-top">
+              <span class="lsri-label">
+                <span class="marker marker-u1">U1</span> User-Specific Scope
+              </span>
+              <div class="lsri-tag-group">
+                <span class="tag-type">Actor &amp; Perm</span>
+                <span class="tag-eeo">EEO=Yes</span>
+                <span class="tag-rev">Revised</span>
+              </div>
+            </div>
+            <div class="lsri-text">
+              Restrict query to <code>current_user.expenses</code> (absent in Turn 1).
+            </div>
+          </div>
+
+          <!-- U2 -->
+          <div class="lsri-row border-revised">
+            <div class="lsri-top">
+              <span class="lsri-label">
+                <span class="marker marker-u2">U2</span> Signed-Out Behavior
+              </span>
+              <div class="lsri-tag-group">
+                <span class="tag-type">Actor &amp; Perm</span>
+                <span class="tag-eeo">EEO=Yes</span>
+                <span class="tag-rev">Revised</span>
+              </div>
+            </div>
+            <div class="lsri-text">
+              Return empty relation <code>Expense.none</code> when not signed in.
+            </div>
+          </div>
+
+          <!-- U3 -->
+          <div class="lsri-row border-extended">
+            <div class="lsri-top">
+              <span class="lsri-label">
+                <span class="marker marker-u3">U3</span> Descending Ordering
+              </span>
+              <div class="lsri-tag-group">
+                <span class="tag-type">Functional</span>
+                <span class="tag-eeo">EEO=Yes</span>
+                <span class="tag-ext">Extended</span>
+              </div>
+            </div>
+            <div class="lsri-text">
+              Preserve order: <code>order(datetime: :desc, created_at: :desc)</code>.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Missed Earlier Elicitation Callout -->
+      <div class="elicit-callout">
+        <div class="elicit-header">
+          <!-- Lightbulb SVG -->
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 18h6"></path>
+            <path d="M10 22h4"></path>
+            <path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"></path>
+          </svg>
+          <span>Earlier Elicitation Opportunity (Before A0001)</span>
+        </div>
+        <div class="elicit-bubble">
+          "Whose expenses should be listed (current user only?), and what if the user is unauthenticated?"
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Column 3: Turn 2 Solution Revision & Diff -->
+    <div class="col-box c3">
+      <div class="col-top-group">
+        <!-- A0002 -->
+        <div class="turn-card highlight-revision">
+          <div class="turn-header">
+            <div class="avatar-role-group">
+              <div class="avatar-icon avatar-gpt">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M21.2 9.8a5.5 5.5 0 0 0-.46-4.46 5.6 5.6 0 0 0-5.18-2.92 5.54 5.54 0 0 0-3.56 1.3 5.53 5.53 0 0 0-8.2 2.7 5.5 5.5 0 0 0-2.3 4.27c0 1.25.4 2.45 1.15 3.44a5.5 5.5 0 0 0 .46 4.46 5.6 5.6 0 0 0 5.18 2.92 5.54 5.54 0 0 0 3.56-1.3 5.53 5.53 0 0 0 8.2-2.7 5.5 5.5 0 0 0 2.3-4.27c0-1.25-.4-2.45-1.15-3.44zm-7.66 10.7a4.2 4.2 0 0 1-2.4-.74l.13-.08 3.96-2.28a.7.7 0 0 0 .36-.62v-4.57l1.37.79v4.54a4.23 4.23 0 0 1-3.42 2.96zm-7.6-3.32a4.19 4.19 0 0 1-.5-2.47c0-.52.1-1.03.28-1.51l.13.08 3.96 2.29c.2.11.45.11.64 0l3.96-2.29v1.58l-3.93 2.27a4.22 4.22 0 0 1-4.54.05zm-1.42-7.53a4.2 4.2 0 0 1 1.9-1.74l-.13.08-3.96 2.28a.7.7 0 0 0-.36.62v4.57l-1.37-.79V10.2c.03-.53.18-1.05.45-1.52zm12.33 1.34l-3.96-2.29a.69.69 0 0 0-.64 0l-3.96 2.29v-1.58l3.93-2.27a4.23 4.23 0 0 1 4.63.18 4.2 4.2 0 0 1 1.42 3.12v.55zm2.75 3.32a4.2 4.2 0 0 1-.28 1.51l-.13-.08-3.96-2.29a.7.7 0 0 0-.64 0l-3.96 2.29v-1.58l3.93-2.27a4.22 4.22 0 0 1 4.54-.05c.34.45.5 1 .5 1.57zm-6.17-1.36l-1.85-1.07 1.85-1.07 1.85 1.07-1.85 1.07z"/>
+                </svg>
+              </div>
+              <span class="role-title">ChatGPT</span>
+            </div>
+            <span class="badge badge-revised-title">Solution Revised</span>
+          </div>
+
+          <div class="code-box">
+            <span class="code-note">// [Date range calculation preserved]</span><br>
+            <span class="code-kw">def</span> <span class="code-fn">index</span><br>
+            &nbsp;&nbsp;<span class="code-kw">if</span> <span class="code-fn">user_signed_in?</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="line-revised">
+              <span>
+                <span class="code-var">@expenses</span> = <span class="code-var">current_user</span>.<span class="code-fn">expenses</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.<span class="code-fn">where</span>(<span class="code-sym">datetime:</span> start_date..end_date)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;.<span class="code-fn">order</span>(<span class="code-sym">datetime:</span> :desc, <span class="code-sym">created_at:</span> :desc)
+              </span>
+              <span class="marker-group">
+                <span class="marker marker-u1">U1</span>
+                <span class="marker marker-u3">U3</span>
+              </span>
+            </span><br>
+            &nbsp;&nbsp;<span class="code-kw">else</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="line-revised">
+              <span>
+                <span class="code-var">@expenses</span> = <span class="code-fn">Expense</span>.<span class="code-fn">none</span>
+              </span>
+              <span class="marker marker-u2">U2</span>
+            </span><br>
+            &nbsp;&nbsp;<span class="code-kw">end</span><br>
+            <span class="code-kw">end</span>
+          </div>
+        </div>
+
+        <!-- Concise Diff Breakdown -->
+        <div class="diff-explain">
+          <div class="diff-item">
+            <span class="diff-dot dot-red"></span>
+            <div><strong>U1 (Revised):</strong> Scope replaced from global <code>Expense</code> to <code>current_user.expenses</code>.</div>
+          </div>
+          <div class="diff-item">
+            <span class="diff-dot dot-red"></span>
+            <div><strong>U2 (Revised):</strong> Added authentication guard with fallback to <code>Expense.none</code>.</div>
+          </div>
+          <div class="diff-item">
+            <span class="diff-dot dot-amber"></span>
+            <div><strong>U3 (Extended):</strong> Re-integrated existing descending multi-column sort.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Final Implication -->
+      <div class="takeaway-bar">
+        <strong>Takeaway:</strong> Proactively eliciting tacit constraints before code generation eliminates the naive solution (A0001) and avoids subsequent rework.
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+</body>
+</html>
+"""
+
+def main():
+    print(f"Writing streamlined HTML to {HTML_PATH}...")
+    HTML_PATH.write_text(HTML_CONTENT, encoding="utf-8")
+
+    # Render PNG using Edge Headless with 2x scale
+    print("Rendering PNG via Edge Headless...")
+    cmd_png = [
+        EDGE_PATH,
+        "--headless",
+        "--disable-gpu",
+        "--hide-scrollbars",
+        "--force-device-scale-factor=2",
+        f"--window-size=1480,680",
+        f"--screenshot={PNG_PATH.resolve()}",
+        str(HTML_PATH.resolve()),
+    ]
+    subprocess.run(cmd_png, check=True)
+    print(f"Saved PNG to {PNG_PATH}")
+
+    # Render PDF using Edge Headless
+    print("Rendering PDF via Edge Headless...")
+    cmd_pdf = [
+        EDGE_PATH,
+        "--headless",
+        "--disable-gpu",
+        "--print-to-pdf-no-header",
+        f"--print-to-pdf={PDF_PATH.resolve()}",
+        str(HTML_PATH.resolve()),
+    ]
+    subprocess.run(cmd_pdf, check=True)
+    print(f"Saved PDF to {PDF_PATH}")
+
+if __name__ == "__main__":
+    main()

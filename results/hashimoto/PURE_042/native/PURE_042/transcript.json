@@ -1,0 +1,51 @@
+{
+  "case_id": "PURE_042",
+  "project_name": "Swift X-Ray Telescope Control Processor Flight Software",
+  "turns": [
+    {
+      "turn_id": 1,
+      "interviewer_utterance": "What are the primary mission goals and the key functions this flight software must perform to support the X-Ray Telescope during normal operations and in fault/recovery scenarios?",
+      "interviewee_utterance": "The main mission goal is to keep the X-Ray Telescope operating reliably so it can collect high-quality data on gamma-ray bursts and their afterglows and get that science data down to the ground. In normal operations, the software needs to accept and dispatch commands, maintain the instrument’s operating state, acquire detector data, process it into useful scientific products, and package those products for transmission. It also has to watch its own health continuously, detect problems early, report anomalies, and support safe recovery actions when something goes wrong in the space environment."
+    },
+    {
+      "turn_id": 2,
+      "interviewer_utterance": "When the flight software detects a fault or anomaly, what autonomous recovery strategy should it follow—for example, what faults should it handle onboard, what recovery actions are allowed, and when should it escalate to a safe mode or ground intervention?",
+      "interviewee_utterance": "In general, we want the software to handle routine, well-understood faults onboard, like transient command errors, minor communication glitches, brief detector anomalies, or recoverable processing faults. It should be allowed to retry operations, reset affected software tasks or interfaces, reinitialize the instrument state, and take the telescope to a predefined safe configuration if needed. If the fault is persistent, affects critical resources, or the software can’t confirm recovery after a limited number of attempts, then it should escalate to safe mode and report the condition so ground operators can decide the next step."
+    },
+    {
+      "turn_id": 3,
+      "interviewer_utterance": "Given the limited onboard resources and possible interruptions, how should the flight software buffer, persist, and recover detector data and partially processed scientific products so that nothing important is lost and any queued or in-progress products survive faults until they can be safely transmitted to ground?",
+      "interviewee_utterance": "We should treat detector data and any partially built science products as protected mission data, so the software needs a durable queue or storage area that survives resets and short interruptions. If processing is interrupted, it should be able to resume from the last consistent point or reconstruct the product from the saved raw and intermediate data, rather than starting over if that would risk loss. If storage starts to fill or a fault persists, the system should preserve the highest-priority data first, mark incomplete products clearly, and keep them available for later downlink once the telescope is stable again."
+    },
+    {
+      "turn_id": 4,
+      "interviewer_utterance": "What operating modes and state transitions should the X-Ray Telescope software support, and what authorization or safety checks should be enforced before commands can change the instrument’s state?",
+      "interviewee_utterance": "It should support the normal mission states you’d expect, such as startup, standby or idle, science acquisition, safe mode, and recovery or reconfiguration states. State changes should only happen when the command source is authorized, the command is valid for the current state, and safety checks show the instrument is in a condition where the transition won’t damage hardware or corrupt data. If those checks fail, the software should reject the command, report why, and leave the current state unchanged."
+    },
+    {
+      "turn_id": 5,
+      "interviewer_utterance": "What should the startup initialization sequence do, step by step, before the X-Ray Telescope is allowed to enter standby/idle or science acquisition—such as subsystem checks, hardware initialization, state validation, calibration, and any conditions that must be met before startup is considered complete?",
+      "interviewee_utterance": "At startup, the software should first bring up the basic processor and communication interfaces, then verify that essential subsystems are responding and that no critical faults are latched. After that it should initialize the instrument hardware, load or restore the last known safe state if appropriate, and run any required self-checks or calibrations needed to confirm the detector and control paths are usable. Startup should only be considered complete once those checks pass, the operating state is validated, and the telescope is confirmed safe to transition into standby or, if commanded and allowed, science acquisition."
+    },
+    {
+      "turn_id": 6,
+      "interviewer_utterance": "What specific rules should the flight software use to decide whether an incoming command is valid for the current operating state—for example, which command types are allowed or disallowed in each mode, what parameter or sequencing checks are required, and what makes a command out of order or otherwise invalid?",
+      "interviewee_utterance": "A command should be accepted only if it is authorized, correctly formatted, and permitted in the current operating state. In practice, that means science commands should be blocked in safe mode, risky reconfiguration or calibration commands should only be allowed in the right maintenance or transition states, and routine monitoring or housekeeping commands should generally remain available. The software also needs to check parameter ranges, sequencing dependencies, and timing, so a command is invalid if it arrives before a required prerequisite, conflicts with an active operation, or would move the instrument into an unsafe or inconsistent state."
+    },
+    {
+      "turn_id": 7,
+      "interviewer_utterance": "Which stakeholder roles or external systems need to interact with the X-Ray Telescope flight software, and what are their responsibilities or authority levels (for example, onboard control logic, ground operators, mission planning, telemetry/downlink systems, or autonomous fault-management functions)?",
+      "interviewee_utterance": "The flight software has to interact with onboard control logic and autonomous fault-management functions, which have authority to manage routine operations and take immediate protective actions when needed. Ground operators and mission planning systems provide commanded activities, configuration updates, and recovery decisions, but their authority is indirect and filtered through command validation and state checks. It also needs to interface with telemetry and downlink systems to package housekeeping and science products for transmission, and those interfaces are essential but should not be able to override safety logic."
+    },
+    {
+      "turn_id": 8,
+      "interviewer_utterance": "What specific health indicators should the flight software monitor and report, and what housekeeping telemetry fields should be included so operators can assess software, instrument, and fault-recovery status from the ground?",
+      "interviewee_utterance": "It should monitor the software’s own execution health, the detector and control hardware status, power and thermal conditions, communication link health, and any active fault or recovery actions. Housekeeping telemetry should include current operating mode, last command received and whether it was accepted, fault flags, reset or retry counts, data backlog or buffer usage, key subsystem temperatures and voltages, and a clear indication of whether the instrument is in normal operation, degraded operation, or safe mode. It would also be useful to report timestamps and sequence markers so ground can tell whether telemetry or science products are missing, delayed, or being recovered."
+    },
+    {
+      "turn_id": 9,
+      "interviewer_utterance": "How should the flight software prioritize, throttle, or rate-limit telemetry and science product transmission when bandwidth, storage, or downlink opportunity is limited, and what rules should govern which data gets sent first or delayed?",
+      "interviewee_utterance": "The software should always favor safety and status telemetry first, then critical fault and recovery information, and only after that send science products and lower-priority housekeeping. If bandwidth is tight, it should throttle nonessential streams, bundle or compress products where possible, and queue the remainder for the next downlink opportunity without discarding anything important. When storage pressure becomes severe, the oldest or lowest-priority noncritical data can be delayed, but fault context, incomplete products, and anything needed to reconstruct recent observations should be protected and sent ahead of routine data."
+    }
+  ]
+}

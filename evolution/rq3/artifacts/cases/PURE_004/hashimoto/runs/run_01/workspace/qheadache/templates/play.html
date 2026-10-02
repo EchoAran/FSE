@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>{{ puzzle.name }}</h2>
+<p>Move blocks to match the goal arrangement. Click a tile, then click an empty cell to move it.</p>
+<form method="post" id="saveform">
+  <label>Player name <input name="player" value="Guest"></label>
+  <input type="hidden" name="moves" id="moves" value="0">
+  <input type="hidden" name="elapsed" id="elapsed" value="0">
+  <input type="hidden" name="board" id="board" value="{}">
+</form>
+<div id="board" class="board" style="grid-template-columns: repeat({{ puzzle.cols }}, 72px);"></div>
+<button onclick="submitIfSolved()">I solved it</button>
+<script>
+const rows = {{ puzzle.rows }};
+const cols = {{ puzzle.cols }};
+const board = JSON.parse('{{ start | tojson }}');
+const goal = JSON.parse('{{ goal | tojson }}');
+let selected = null;
+let moves = 0;
+const start = Date.now();
+const boardEl = document.getElementById('board');
+function render(){
+  boardEl.innerHTML = '';
+  for(let y=0;y<rows;y++) for(let x=0;x<cols;x++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell ' + (board[Object.keys(board).find(k => board[k][0]==x && board[k][1]==y)] ? 'tile' : 'empty');
+    const token = Object.keys(board).find(k => board[k][0]==x && board[k][1]==y);
+    cell.textContent = token || '';
+    cell.onclick = () => clickCell(x,y,token);
+    if(selected && token===selected) cell.style.outline = '3px solid red';
+    boardEl.appendChild(cell);
+  }
+}
+function clickCell(x,y,token){
+  if(token){ selected = token; render(); return; }
+  if(selected){ board[selected] = [x,y]; selected = null; moves++; render(); }
+}
+function solved(){ return Object.keys(goal).every(k => board[k][0]===goal[k][0] && board[k][1]===goal[k][1]); }
+function submitIfSolved(){
+  document.getElementById('moves').value = moves;
+  document.getElementById('elapsed').value = Math.floor((Date.now()-start)/1000);
+  document.getElementById('board').value = JSON.stringify(board);
+  if(solved()) document.getElementById('saveform').submit();
+  else alert('Keep going!');
+}
+render();
+</script>
+{% endblock %}

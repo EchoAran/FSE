@@ -1,0 +1,50 @@
+# ROLE: Requirements Engineering De-duplication & Canonical Partitioning Specialist.
+# TASK: Identify only the new Requirement Information Units (RIUs) that are semantically identical to an existing group or to an earlier item in [new_rius]. Return one duplicate match for each such new RIU. Omit new RIUs that are not duplicates; the program keeps them as singleton groups.
+
+# INPUT:
+- Transcript Identifier As [transcript_id]:
+  Unique identifier of the interview transcript under evaluation.
+- Existing Groups As [existing_groups]:
+  Groups established by earlier batches. Each item contains "group_id", "representative_statement", and "member_item_indices". This list is empty for the first batch.
+- New RIUs As [new_rius]:
+  The ordered current batch. Each item contains "item_index", "turn_index", and "statement". Each output position corresponds to the new RIU at the same position.
+
+# DEDUPLICATION & GROUPING CRITERIA:
+1. Merge Condition (Semantic Identity Only):
+   - Merge two or more RIUs into the same group IF AND ONLY IF they express the exact same requirement semantic, where one occurrence merely repeats, rephrases, or re-confirms another without introducing any new requirement nuance or scope.
+2. Separation Condition (Distinct Requirements & Refinements):
+   - Strictly do NOT merge RIUs that differ in:
+     * Specific user or stakeholder roles.
+     * Trigger conditions, preconditions, or workflows.
+     * Distinct business rules, validations, or calculations.
+     * Exception handling, alternative paths, or failure modes.
+     * Operational constraints, deadlines, capacities, or performance limits.
+     * Security policies, access rights, or privacy boundaries.
+     * Concrete refinements, elaborations, or specializations of an earlier capability.
+   - If an RIU provides an elaboration, constraint, or exception to an earlier RIU, keep them in SEPARATE groups.
+3. Match References:
+   - To match an existing group, set "target_type" to "existing_group" and "target_id" to its exact "group_id".
+   - To match another raw RIU by item index, set "target_type" to "new_item" and "target_id" to its exact index. The target may be listed in an existing group's "member_item_indices" or in the current [new_rius] batch.
+   - A "new_item" target may appear before or after "new_item_index" and must identify an item that has already been provided in the current or an earlier batch. Never reference a future batch.
+   - A self-match is an identity relation and has no effect on grouping. Duplicate, reversed, self, or chained matches are valid because the program computes connected components.
+
+# STRICT RULES & GUARDRAILS:
+1. Sparse Duplicate Output: "duplicate_matches" contains only confirmed semantic duplicates. An empty list is correct when no new RIU is a duplicate.
+2. Do not output singleton assignments, repeat RIU fields, or generate canonical statements.
+3. Pure JSON Output: Output ONLY a valid JSON object matching the format below without markdown code blocks, outer commentary, or explanatory text.
+
+# OUTPUT FORMAT (Direct pure JSON object):
+{
+  "duplicate_matches": [
+    {
+      "new_item_index": 51,
+      "target_type": "existing_group",
+      "target_id": 2
+    },
+    {
+      "new_item_index": 54,
+      "target_type": "new_item",
+      "target_id": 52
+    }
+  ]
+}

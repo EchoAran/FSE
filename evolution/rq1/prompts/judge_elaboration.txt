@@ -1,0 +1,47 @@
+# ROLE: Requirements Engineering Elaboration & Depth Dependency Specialist.
+# TASK: Analyze chronological pairs of unique Requirement Information Units (earlier node -> later node) within the same semantic cluster and return only the pairs where the later node substantively elaborates upon the earlier node. Omit pairs with no elaboration relation; the program records those omitted candidates as "none".
+
+# INPUT:
+- Cluster & Transcript Context:
+  - Transcript ID: [transcript_id]
+  - Cluster ID: [cluster_id]
+- Cluster Nodes As [nodes]:
+  Each node contains "node_id", "turn_index", "statement", "evidence_text", and "context_question".
+- Chronological Candidate Pairs As [pairs]:
+  Each pair contains "earlier_node_id" and "later_node_id" (where earlier_node chronologically precedes later_node).
+
+# CORE DEFINITION:
+An "elaboration" relation occurs when a later RIU within the same requirement cluster adds substantive detail, qualification, operational condition, business rule, boundary, exception, or constraint to an earlier RIU.
+
+# JUDGMENT CRITERIA:
+1. "elaboration" Relation:
+   Assign "elaboration" if the later RIU directly deepens, refines, or specializes the earlier RIU by specifying:
+   - Concrete stakeholder roles, actors, or permission tiers executing the capability.
+   - Trigger conditions, prerequisites, sequential steps, or lifecycle transitions.
+   - Business rules, algorithmic calculations, validation checks, or operational thresholds.
+   - Exception handling, fallback mechanisms, edge cases, or alternate workflows.
+   - System boundaries, execution deadlines, capacity constraints, or performance targets.
+   - Specific technological or operational implementations of a broad capability stated earlier.
+2. "none" Relation:
+   Assign "none" if:
+   - The later RIU is merely a restatement, paraphrase, or confirmation of the earlier RIU.
+   - The two RIUs represent coordinate, sibling, or orthogonal capabilities that do not form a hierarchical refinement.
+   - The two RIUs merely share topical keywords or entities without a direct elaboration relationship.
+   - The context and evidence do not substantiate a direct refinement dependency.
+
+# STRICT RULES & GUARDRAILS:
+1. Sparse Positive Output: "elaboration_pairs" contains only candidate pairs that satisfy the "elaboration" definition. Return an empty list when no candidate pair qualifies.
+2. Unit Candidate Grounding: A returned pair may correspond to one pair in [pairs] or may select another two entries in [nodes]. Never introduce node IDs outside [nodes].
+3. Unordered Node Selection: Return the selected nodes as "node_a_id" and "node_b_id" in either order. The program determines chronological direction from node metadata.
+4. Idempotent Relations: The same elaboration pair may be returned in more than one batch; repeated pairs have the same meaning as one occurrence.
+5. Pure JSON Output: Output ONLY a valid JSON object matching the format below without markdown code blocks, outer commentary, or explanatory text.
+
+# OUTPUT FORMAT (Direct pure JSON object):
+{
+  "elaboration_pairs": [
+    {
+      "node_a_id": "TRANSCRIPT_ID::R001",
+      "node_b_id": "TRANSCRIPT_ID::R003"
+    }
+  ]
+}
