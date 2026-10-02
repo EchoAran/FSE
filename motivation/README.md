@@ -1,7 +1,7 @@
 # Motivation Study
 
-Analysis of **Later-Stated Requirement Information (LSRI)** in DevGPT developer-ChatGPT
-conversations.
+Analysis of **Later-Stated Requirement Information (LSRI)** in real developer–ChatGPT
+conversations from the DevGPT Version 10 snapshot `snapshot_20240514`.
 
 A conversation is *implementation-oriented* when the developer asks ChatGPT to build or change
 something and ChatGPT answers with a concrete solution. Everything the developer states about that
@@ -14,6 +14,12 @@ knowledge it carries), `introduction_mode` (whether the developer raised it on t
 or the assistant elicited it), `eeo` (whether the earlier part of the conversation had a reasonable
 chance to ask for that information) and `response_uptake` (how the assistant answer reacted to it:
 `Revised`, `Extended`, `No Uptake` or `Insufficient Evidence`).
+
+## Research motivation and observed results
+
+Some later solution revisions follow the introduction of requirement information that could reasonably have been elicited before the first concrete solution. The study examines this opportunity in real development conversations by connecting first expression, earlier elicitation opportunity (EEO), and subsequent response uptake.
+
+The analyzed sample contains 553 conversations; 300 (54.25%) contain 2,400 LSRI. Of these LSRI, 1,393 (58.04%) have EEO=Yes, and 640 (26.67%) have both EEO=Yes and Revised uptake. These observations show that later requirement information is common in this sample and that earlier clarification offers an opportunity to reduce subsequent solution revision and rework.
 
 ## Division of labour
 
@@ -29,7 +35,7 @@ and the turn it read that phrase from. Everything else is a program duty:
   `requirement_relevant` and `Absent`;
 - counting — every number in the tables.
 
-No reported count is a model opinion, and none is entered by hand.
+Reported counts are computed from the recorded classifications and source-linked evidence.
 
 ## Pipeline
 
@@ -143,7 +149,7 @@ carry one of four codes: `LLM_TRANSPORT_ERROR`, `LLM_SCHEMA_ERROR`, `EVIDENCE_SP
 ## summarize
 
 `summarize` reads the analyses and never calls the model. It writes the screening flow, one row per
-analyzed conversation, the four distributions over LSRI units with their counts and percentages, the
+analyzed conversation, the four distributions over LSRI with their counts and percentages, the
 cross tabulations of those distributions, the visibility of prior artifact context, the
 representative case shortlist, and one summary document holding all of these numbers.
 

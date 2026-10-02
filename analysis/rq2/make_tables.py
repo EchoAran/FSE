@@ -90,7 +90,7 @@ def main():
     markdown = ["| Baseline | Local Coherence | Transition Quality | Contingent Responsiveness |",
                 "|:--|:--:|:--:|:--:|"]
     latex = [r"\begin{table}[t]", r"\centering",
-             r"\caption{Paired mean score gains of Ours over baselines [95\% CI] across 69 Cases.}",
+             r"\caption{Paired mean score gains of ElicitMind over baselines [95\% CI] across 69 Cases.}",
              r"\label{tab:rq2-results}", r"\small", r"\setlength{\tabcolsep}{3pt}",
              r"\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc@{}}", r"\toprule",
              r"Baseline & \shortstack{Local\\Coherence} & \shortstack{Transition\\Quality} & \shortstack{Contingent\\Responsiveness} \\", r"\midrule"]

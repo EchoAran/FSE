@@ -4,6 +4,8 @@ This package turns interview conversations into comparable requirement-informati
 
 Automatic processing uses the same Case artifact layout for single-Case and full runs. You can start with one Case, inspect its outputs, and then continue through the complete dataset.
 
+The recorded experiment contains 69 Cases and 276 transcripts. One researcher completed the sampled review of 28 transcripts from seven Cases, with no issues requiring correction or major omissions. Completed annotations and the summary are under `artifacts/audit/`.
+
 ## Principles and workflow
 
 A Case contains one transcript from each configured interview method. A transcript is one method's conversation for that Case. An RIU is an atomic piece of requirement-relevant information provided by the interviewee.
@@ -51,6 +53,10 @@ The stages implement these rules:
 The current Depth output is an exact-depth count distribution. Reports expose scalar columns such as `depth_1_dag_count` and `depth_2_dag_count`. A transcript with zero RIUs has Yield 0, Breadth 0, and an empty `depth_counts` dictionary; its report depth-count columns are zero. For every transcript, the sum of its depth counts equals Breadth.
 
 Clustering threshold sensitivity reuses the embeddings to recompute Breadth at the configured alternative distance thresholds. It does not recompute elaboration or Depth at those thresholds.
+
+## Paper analysis
+
+The paper reports Yield, Breadth, and the Case-equal Depth distribution. Its statistics and figures are reproduced with `python analysis/rq1/plot_rq1.py`; see [the analysis guide](../../analysis/rq1/README.md). Yield/Breadth use exact paired sign tests with one Holm family of 12 comparisons. Each alternative clustering cutoff has a separate six-comparison Breadth family. Depth curves use Case bootstrap intervals. The pipeline's Friedman/Wilcoxon tests, efficiency measures, and other exports remain available as additional summaries.
 
 ## Environment and configuration
 

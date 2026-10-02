@@ -14,7 +14,7 @@ import numpy as np
 DIMENSIONS = ("local_coherence", "transition_quality", "contingent_responsiveness")
 RATERS = ("llm_expert_1", "llm_expert_2", "human_expert_1", "human_expert_2")
 METHODS = ("hashimoto", "llmrei-long", "sparkme", "proposed_method")
-LABELS = ("Hashimoto", "LLMREI-long", "SparkMe", "Proposed method")
+LABELS = ("Hashimoto", "LLMREI-long", "SparkMe", "ElicitMind")
 COLORS = ("#3B6FB6", "#2A9D8F", "#D9A441", "#B84A62")
 
 
@@ -102,7 +102,7 @@ def main():
         table.append(f"| {label} | " + " | ".join(f"{value:.3f}" for value in means[m]) + " |")
     table.extend([
         "", "## Paired mean differences [95% CI]", "",
-        "All contrasts are Proposed method minus baseline, paired within Case.", "",
+        "All contrasts are ElicitMind minus baseline, paired within Case.", "",
         "| Baseline | Local Coherence | Transition Quality | Contingent Responsiveness |",
         "| --- | ---: | ---: | ---: |",
     ])
@@ -141,7 +141,7 @@ def main():
                     color="#303030")
         ax.set(xlim=(-0.46, 3.46), ylim=(0, 5))
         ax.set_yticks(range(6))
-        ax.set_xticks(range(4), ["Hashimoto", "LLMREI-\nlong", "SparkMe", "Ours"])
+        ax.set_xticks(range(4), ["Hashimoto", "LLMREI-\nlong", "SparkMe", "ElicitMind"])
         ax.tick_params(axis="x", length=3, width=0.65, pad=5, labelsize=7)
         ax.tick_params(axis="y", length=3, width=0.65, labelsize=9)
         ax.grid(axis="y", color="#E7E7E7", lw=0.5, zorder=0)

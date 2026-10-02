@@ -21,7 +21,7 @@ from scipy.stats import binomtest, friedmanchisquare
 
 
 METHODS = ("hashimoto", "llmrei-long", "sparkme", "proposed_method")
-LABELS = ("Hashimoto", "LLMREI-long", "SparkMe", "Ours")
+LABELS = ("Hashimoto", "LLMREI-long", "SparkMe", "ElicitMind")
 COLORS = ("#3B6FB6", "#2A9D8F", "#D9A441", "#B84A62")
 LINESTYLES = ("--", "-.", ":", "-")
 MARKERS = ("o", "s", "^", "*")
@@ -82,6 +82,68 @@ def load_inputs(artifacts: Path) -> tuple[list[str], list[dict], dict]:
                              response_count=response_count))
             histograms[case, method] = depths
     return cases, rows, histograms
+
+
+def load_sensitivity(
+    artifacts: Path, cases: list[str], breadth: dict[tuple[str, str], int]
+) -> tuple[float, list[float], list[np.ndarray]]:
+    primary_thresholds, per_threshold = set(), {}
+    for case in cases:
+        folder = artifacts / "cases" / case / "clustering"
+        with (folder / "summary.json").open(encoding="utf-8") as stream:
+            primary_thresholds.add(float(json.load(stream)["distance_threshold"]))
+        with (folder / "threshold_sensitivity.csv").open(encoding="utf-8-sig") as stream:
+            for row in csv.DictReader(stream):
+                if row["case_id"] != case or row["method_id"] not in METHODS:
+                    raise ValueError(f"Sensitivity identity mismatch: {case} {row['method_id']}")
+                threshold = float(row["threshold"])
+                key = (case, row["method_id"])
+                if key in per_threshold.setdefault(threshold, {}):
+                    raise ValueError(f"Duplicate sensitivity row: {case} {threshold}")
+                per_threshold[threshold][key] = int(row["breadth"])
+    if len(primary_thresholds) != 1:
+        raise ValueError("Cases report different primary clustering thresholds")
+    primary = primary_thresholds.pop()
+    if primary in per_threshold:
+        raise ValueError("Primary threshold is repeated among sensitivity thresholds")
+    per_threshold[primary] = dict(breadth)
+    thresholds = sorted(per_threshold)
+    expected = {(case, method) for case in cases for method in METHODS}
+    matrices = []
+    for threshold in thresholds:
+        if set(per_threshold[threshold]) != expected:
+            raise ValueError(f"Incomplete sensitivity coverage at threshold {threshold}")
+        matrices.append(np.array([[per_threshold[threshold][case, method] for method in METHODS]
+                                  for case in cases]))
+    return primary, thresholds, matrices
+
+
+def sensitivity_tables(
+    cases: list[str], thresholds: list[float], matrices: list[np.ndarray]
+) -> tuple[list[dict], list[dict], list[dict]]:
+    descriptives, comparisons, source_rows = [], [], []
+    for threshold, matrix in zip(thresholds, matrices):
+        for j, method in enumerate(METHODS):
+            q1, median, q3 = np.percentile(matrix[:, j], [25, 50, 75])
+            descriptives.append(dict(threshold=threshold, method_id=method, n_cases=len(matrix),
+                                     median=float(median), q1=float(q1), q3=float(q3),
+                                     min=int(matrix[:, j].min()), max=int(matrix[:, j].max())))
+        for index, case in enumerate(cases):
+            for j, method in enumerate(METHODS):
+                source_rows.append(dict(case_id=case, method_id=method, threshold=threshold,
+                                        breadth=int(matrix[index, j])))
+        for a, b in itertools.combinations(range(len(METHODS)), 2):
+            wins = int(np.count_nonzero(matrix[:, b] > matrix[:, a]))
+            losses = int(np.count_nonzero(matrix[:, b] < matrix[:, a]))
+            ties = len(matrix) - wins - losses
+            p_value = float(binomtest(wins, wins + losses, alternative="two-sided").pvalue)
+            comparisons.append(dict(threshold=threshold, method_a=METHODS[a], method_b=METHODS[b],
+                                    n_cases=len(matrix), b_wins=wins, ties=ties, b_losses=losses,
+                                    n_non_ties=wins + losses, p_raw=p_value))
+        family = [record for record in comparisons if record["threshold"] == threshold]
+        for record, adjusted in zip(family, holm([record["p_raw"] for record in family])):
+            record["p_holm_6"] = float(adjusted)
+    return descriptives, comparisons, source_rows
 
 
 def holm(p_values: list[float]) -> np.ndarray:
@@ -179,7 +241,7 @@ def plot_distributions(matrices: dict, folder: Path) -> None:
             jitter = rng.permutation(np.linspace(-0.16, 0.16, len(matrix)))
             ax.scatter(j + jitter, matrix[:, j], s=9, color=color, alpha=0.72,
                        edgecolors="white", linewidths=0.25, zorder=3)
-        ax.set_xticks(np.arange(4), ("Hashimoto", "LLMREI-\nlong", "SparkMe", "Ours"))
+        ax.set_xticks(np.arange(4), ("Hashimoto", "LLMREI-\nlong", "SparkMe", "ElicitMind"))
         ax.set_ylabel("Unique RIUs" if metric == "yield" else "Covered clusters")
         ax.set_ylim(bottom=0, top=float(matrix.max()) * 1.08)
         ax.set_xlim(-0.6, 3.6)
@@ -216,6 +278,39 @@ def plot_depth(summary: list[dict], folder: Path) -> None:
                ncol=4, columnspacing=1.5, handlelength=2.5)
     fig.subplots_adjust(left=0.11, right=0.995, bottom=0.17, top=0.87)
     save_figure(fig, folder / "fig2_depth_retention")
+
+
+def plot_sensitivity(primary: float, thresholds: list[float], matrices: list[np.ndarray],
+                     folder: Path) -> None:
+    fig, ax = plt.subplots(figsize=(6.6, 2.75))
+    indices = np.random.default_rng(SEED).integers(len(matrices[0]),
+                                                   size=(BOOTSTRAP_REPEATS, len(matrices[0])))
+    for method, label, color, linestyle, marker, size in zip(
+        METHODS, LABELS, COLORS, LINESTYLES, MARKERS, MARKER_SIZES
+    ):
+        j = METHODS.index(method)
+        medians, lows, highs = [], [], []
+        for matrix in matrices:
+            low, high = np.percentile(np.median(matrix[indices, j], axis=1), [2.5, 97.5])
+            medians.append(float(np.median(matrix[:, j])))
+            lows.append(float(low))
+            highs.append(float(high))
+        ax.fill_between(thresholds, lows, highs, color=color, alpha=0.09)
+        ax.plot(thresholds, medians, label=label, color=color, linestyle=linestyle,
+                linewidth=1.4, marker=marker, markersize=size, markerfacecolor="white",
+                markeredgecolor=color, markeredgewidth=0.9)
+    ax.set_xlabel("Clustering distance threshold")
+    ax.set_ylabel("Covered clusters (Breadth)")
+    ax.set_xticks(thresholds, [f"{value:g} (main)" if value == primary else f"{value:g}"
+                               for value in thresholds])
+    ax.set_xlim(thresholds[0] - 0.01, thresholds[-1] + 0.01)
+    ax.set_ylim(0, max(float(matrix.max()) for matrix in matrices) * 1.08)
+    ax.grid(axis="y", color="#E7E7E7", linewidth=0.5)
+    ax.set_axisbelow(True)
+    fig.legend(*ax.get_legend_handles_labels(), loc="upper center", bbox_to_anchor=(0.55, 1.0),
+               ncol=4, columnspacing=1.5, handlelength=2.5)
+    fig.subplots_adjust(left=0.11, right=0.995, bottom=0.17, top=0.87)
+    save_figure(fig, folder / "fig3_breadth_sensitivity")
 
 
 def format_p(value: float) -> str:
@@ -279,7 +374,7 @@ Method & Median [Q1, Q3] & $p_{\mathrm{Holm}}$ & Median [Q1, Q3] & $p_{\mathrm{H
 \end{tabular}
 \par\smallskip
 \begin{minipage}{\linewidth}\footnotesize
-The $p$ values compare each baseline with Ours using two-sided exact paired sign tests.
+The $p$ values compare each baseline with ElicitMind using two-sided exact paired sign tests.
 Ties are omitted from each test. Holm adjustment covers all 12 pairwise tests across
 the four methods and the two outcomes, including baseline--baseline comparisons.
 Depth is reported as a distribution in Figure~\ref{fig:rq1-depth}, not as a scalar endpoint.
@@ -290,7 +385,8 @@ Depth is reported as a distribution in Figure~\ref{fig:rq1-depth}, not as a scal
     return table
 
 
-def write_report(output: Path, cases: list[str], rows: list[dict], table: str, retention: list[dict]) -> None:
+def write_report(output: Path, cases: list[str], rows: list[dict], table: str,
+                 retention: list[dict], sensitivity: dict) -> None:
     curve = {(r["method_id"], r["minimum_depth"]): r for r in retention}
     ours2 = 100 * curve["proposed_method", 2]["mean_case_fraction"]
     spark2 = 100 * curve["sparkme", 2]["mean_case_fraction"]
@@ -300,6 +396,40 @@ def write_report(output: Path, cases: list[str], rows: list[dict], table: str, r
         method: float(np.median([r["response_count"] for r in rows if r["method_id"] == method]))
         for method in METHODS
     }
+    primary = sensitivity["primary"]
+    thresholds = sensitivity["thresholds"]
+    descriptives = sensitivity["descriptives"]
+    sign = sensitivity["sign"]
+    quartiles = {(r["threshold"], r["method_id"]): f"{r['median']:g} [{r['q1']:g}, {r['q3']:g}]"
+                 for r in descriptives}
+    sensitivity_lines = ["| " + " | ".join(["Distance threshold", *LABELS]) + " |",
+                         "|:--|--:|--:|--:|--:|"]
+    for threshold in thresholds:
+        label = f"{threshold:g}" + (" (main)" if threshold == primary else "")
+        sensitivity_lines.append("| " + " | ".join(
+            [label, *(quartiles[threshold, method] for method in METHODS)]) + " |")
+    sensitivity_table = "\n".join(sensitivity_lines)
+    alternative_text = ", ".join(f"{threshold:g}" for threshold in thresholds if threshold != primary)
+    baseline_p = [r["p_holm_6"] for r in sign if r["method_b"] == "proposed_method"]
+    worst_p = max(baseline_p)
+    medians = {(r["threshold"], r["method_id"]): r["median"] for r in descriptives}
+    ordering_kept = all(medians[threshold, "proposed_method"] > medians[threshold, method]
+                        for threshold in thresholds for method in METHODS
+                        if method != "proposed_method")
+    if ordering_kept and worst_p < 0.05:
+        robustness = (
+            f"ElicitMind has the highest median Breadth at every cutoff, and every baseline comparison "
+            f"remains significant after Holm correction within its own cutoff. The largest adjusted p value "
+            f"across the {len(baseline_p)} baseline-versus-ElicitMind tests is {worst_p:.3g}. "
+            "Changing the cutoff rescales Breadth but does not change the direction or the significance "
+            "of the Breadth comparison."
+        )
+    else:
+        robustness = (
+            f"The largest adjusted p value across the {len(baseline_p)} baseline-versus-ElicitMind tests "
+            f"is {worst_p:.3g}. Breadth magnitudes and comparison outcomes depend on the cutoff, so the "
+            "alternative-cutoff results are reported in full rather than summarized as one robustness claim."
+        )
     report = f"""# RQ1 statistical analysis and visualization
 
 ## Dataset and outcome definitions
@@ -308,6 +438,7 @@ All {len(cases)} Cases, {len(rows)} transcripts, and {sum(r['response_count'] fo
 The four methods are matched within each Case, with one complete interview per Case/method.
 The analysis unit is the Case, not an RIU, response, or DAG.
 Yield is the within-transcript unique RIU count; Breadth is the covered shared-cluster count.
+Breadth is also recomputed at alternative clustering cutoffs so that its sensitivity to clustering granularity can be read directly.
 Input checks confirmed unique RIU counts, response counts, and agreement between cluster_depths.csv and depth_counts.
 No model calls, outlier exclusions, or Case subsampling were performed.
 
@@ -315,7 +446,7 @@ No model calls, outlier exclusions, or Case subsampling were performed.
 
 {table}
 
-Quartiles use NumPy's linear interpolation convention. Both p columns report two-sided exact sign tests against Ours.
+Quartiles use NumPy's linear interpolation convention. Both p columns report two-sided exact sign tests against ElicitMind.
 The null hypothesis is equal win/loss probability among non-tied Cases. Ties are excluded from each test and explicitly counted in paired_sign_tests.csv.
 Holm adjustment covers all six method pairs across two outcomes, forming one family of 12 comparisons; comparisons were not selected by significance.
 These tests assess consistency of the within-Case win direction, not the magnitude of a difference between marginal medians.
@@ -328,8 +459,8 @@ Friedman omnibus results are provided separately in omnibus_tests.csv, with a di
 Boxes span Q1--Q3, center lines indicate medians, and whiskers reach the most extreme observations within 1.5 IQR.
 Each point is an observed Case/method outcome. All observations, including points beyond the whiskers, are retained.
 Horizontal jitter changes display positions only. There are no mean bars, paired-difference plots, or ratio plots.
-Ours has higher marginal medians than all three baselines, but distributions overlap, especially with SparkMe.
-This pattern must not be described as Ours winning on every Case.
+ElicitMind has higher marginal medians than all three baselines, but distributions overlap, especially with SparkMe.
+This pattern must not be described as ElicitMind winning on every Case.
 
 ## Figure 2: Case-equal depth retention (option B)
 
@@ -344,17 +475,33 @@ All transcripts have positive Breadth, so no conditional fractions were missing 
 Figure 2 displays depths 1--8 to avoid compressing the main pattern with a sparse tail.
 The complete depth 1--{max(r['minimum_depth'] for r in retention)} data remain in the exported CSV files; depths above 8 still contribute to cumulative fractions at the displayed thresholds.
 
-At depth at least 2, the Case-equal fractions are {ours2:.2f}% for Ours and {spark2:.2f}% for SparkMe; at depth at least 3, they are {ours3:.2f}% and {spark3:.2f}%, respectively.
+At depth at least 2, the Case-equal fractions are {ours2:.2f}% for ElicitMind and {spark2:.2f}% for SparkMe; at depth at least 3, they are {ours3:.2f}% and {spark3:.2f}%, respectively.
 These are reading aids for the full curve, not independently selected significance endpoints.
 The distribution of longer elaboration chains can be described, but this analysis does not establish statistically significant Depth superiority over SparkMe.
 
+## Figure 3: Clustering-threshold sensitivity of Breadth
+
+![Clustering-threshold sensitivity of Breadth](figures/fig3_breadth_sensitivity.png)
+
+{sensitivity_table}
+
+Breadth is recomputed by reusing the Case embeddings at the alternative cosine-distance cutoffs {alternative_text} and at the primary cutoff {primary:g}.
+The primary-cutoff values are the ones used in Table 1 and Figure 1; the alternative cutoffs only change the clustering granularity.
+Changing the cutoff rescales Breadth, so the full per-cutoff table is reported instead of a single robustness scalar.
+Elaboration and Depth are not recomputed at the alternative cutoffs, so this check covers Breadth only.
+Lines show the median Breadth per method; shading shows pointwise 95% percentile intervals from {BOOTSTRAP_REPEATS:,} paired Case bootstrap resamples with seed {SEED}, using the same Case indices for the four methods. These intervals are not simultaneous bands.
+All Case-specific values are exported in source_data/case_breadth_sensitivity.csv, and the per-cutoff tests are in tables/threshold_sign_tests.csv.
+
+{robustness}
+
 ## Interpretation boundaries
 
-Median response counts are Ours {response_medians['proposed_method']:g}, SparkMe {response_medians['sparkme']:g}, LLMREI-long {response_medians['llmrei-long']:g}, and Hashimoto {response_medians['hashimoto']:g}.
+Median response counts are ElicitMind {response_medians['proposed_method']:g}, SparkMe {response_medians['sparkme']:g}, LLMREI-long {response_medians['llmrei-long']:g}, and Hashimoto {response_medians['hashimoto']:g}.
 Table 1 measures complete-interview total outcomes, not equal-turn, equal-token, or equal-API-cost performance; it does not establish an efficiency advantage.
 Curve intervals reflect empirical uncertainty in Case composition, not repeated-interview or LLM-pipeline variability within a Case.
 Tests and resampling assume approximately independent Cases. Potential source-level dependencies were not audited here; conclusions are bounded to this benchmark and current run.
 Crossing curves should not be described as uniform Depth superiority. No scalar Depth endpoint or per-depth significance tests were created.
+The clustering-threshold check varies only the cosine-distance cutoff. The embedding model, the average-linkage rule, and the primary-threshold elaboration output were held fixed, so it does not cover embedding-model or linkage sensitivity.
 The default artifact root currently lacks a manual-review summary. No quality pass rates were fabricated; automatic-outcome statistics do not replace the single reviewer's four quality checks.
 This plan was specified after results were visible; it is not a preregistered analysis.
 
@@ -373,16 +520,22 @@ All four methods start at 100% at depth 1 because every covered cluster has dept
 Shading indicates pointwise 95% percentile confidence intervals from 10,000 paired Case bootstrap resamples (seed 31017), not simultaneous confidence bands or significance tests.
 No transcript had zero Breadth. Display is restricted to depths 1--8; the full depth distribution remains available in the source data.
 
+**Figure 3. Sensitivity of Breadth to the clustering distance threshold.**
+Each line is the median Breadth of one method across 69 matched Cases at the primary cutoff ({primary:g}, marked on the axis) and at the alternative cutoffs {alternative_text}.
+Shading indicates pointwise 95% percentile intervals from 10,000 paired Case bootstrap resamples (seed 31017), not simultaneous confidence bands or significance tests.
+Breadth is recomputed from the frozen Case embeddings, so only the clustering granularity changes; elaboration and Depth are not recomputed.
+
 **Statistical analysis.** Yield and Breadth were summarized using medians and first and third quartiles across 69 matched Cases.
 Pairwise comparisons used two-sided exact sign tests, excluding ties, with Holm adjustment across all 12 comparisons involving four methods and two outcomes.
 The tests assess the balance of within-Case wins and losses rather than the magnitude of a difference between marginal medians.
+Breadth was additionally tested at each alternative clustering cutoff, with the six method pairs Holm-adjusted within each cutoff separately.
 Depth was analyzed as a complete distribution using Case-equal retention curves and paired Case bootstrap intervals.
 Each method was run once per Case; resampling Cases does not quantify within-Case run-to-run variability.
 
 ## Style and reproducibility
 
 Serif typography, light axes, and compact panels follow the supplied reference's visual style.
-Both figures use a coordinated blue, teal, gold, and berry palette. Figure 2 distinguishes methods with circles, squares, triangles, and stars, as well as different line styles.
+All three figures use a coordinated blue, teal, gold, and berry palette. Figures 2 and 3 distinguish methods with circles, squares, triangles, and stars, as well as different line styles.
 The reference's statistical logic, logarithmic axes, radar charts, and result wording were not copied.
 Published FSE figure and table layouts informed the compact panels and booktabs table. Method colors and English labels remain consistent.
 The design width is 6.6 inches; use LaTeX width=\\linewidth to fit the current FSE/PACMSE single-column manuscript rather than assuming a universal double-column format.
@@ -428,11 +581,24 @@ def main() -> None:
     write_csv(output / "source_data/case_depth_retention.csv", case_rows)
     write_csv(output / "tables/depth_retention.csv", retention)
     LOG.info("Calculated full depth retention and %d paired Case bootstrap resamples", BOOTSTRAP_REPEATS)
+    primary, thresholds, sensitivity_matrices = load_sensitivity(
+        args.artifacts.resolve(), cases,
+        {(r["case_id"], r["method_id"]): r["breadth"] for r in rows})
+    descriptives, threshold_tests, sensitivity_rows = sensitivity_tables(
+        cases, thresholds, sensitivity_matrices)
+    write_csv(output / "tables/threshold_sensitivity.csv", descriptives)
+    write_csv(output / "tables/threshold_sign_tests.csv", threshold_tests)
+    write_csv(output / "source_data/case_breadth_sensitivity.csv", sensitivity_rows)
+    LOG.info("Calculated Breadth sensitivity over thresholds %s",
+             ", ".join(f"{threshold:g}" for threshold in thresholds))
+    sensitivity = dict(primary=primary, thresholds=thresholds,
+                       descriptives=descriptives, sign=threshold_tests)
     configure_style()
     plot_distributions(matrices, output / "figures")
     plot_depth(retention, output / "figures")
-    write_report(output, cases, rows, table, retention)
-    LOG.info("Exported both figures as PDF/SVG/PNG and the significance table as CSV/Markdown/LaTeX")
+    plot_sensitivity(primary, thresholds, sensitivity_matrices, output / "figures")
+    write_report(output, cases, rows, table, retention, sensitivity)
+    LOG.info("Exported all figures as PDF/SVG/PNG and the tables as CSV/Markdown/LaTeX")
     LOG.info("Analysis written to %s", output / "analysis.md")
 
 

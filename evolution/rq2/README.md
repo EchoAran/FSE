@@ -1,6 +1,10 @@
 # RQ2: Interview Flow Quality Evaluation
 
-RQ2 evaluates the interviewer behavior visible in complete requirements-interview transcripts. Two independently configured LLM experts assess the same dialogue using the same rubric. Two human experts use matching CSV templates, with their independent review conducted outside this package. Reports retain the real case, method, and rater identifiers.
+RQ2 evaluates the interviewer behavior visible in complete requirements-interview transcripts. Two independently configured LLM judges assess the same dialogue using the same rubric. Two human experts use matching CSV templates, with their independent review conducted outside this package. Reports retain the real case, method, and rater identifiers.
+
+## Reported experiment and paper aggregation
+
+All 276 transcripts were independently scored by two LLM judges and two requirements-engineering experts. The LLM judges were Claude Opus 5.5 (`claude-opus-5-5`) and GPT-6 Sol (`gpt-6-sol`), both at temperature 0. The paper averages the four ratings within each Case/method/dimension, then compares methods across the 69 Cases. Ordinal Krippendorff's alpha reports rater agreement. The final aggregate analysis and nine Holm-adjusted exact paired sign tests are reproduced under [analysis/rq2](../../analysis/rq2/README.md); the pipeline also retains separate rater-level reports.
 
 ## Evaluation principles
 
@@ -46,7 +50,6 @@ LLM task JSON files are the source of truth for model ratings. LLM CSVs are rebu
 Run the commands below in PowerShell from the repository root:
 
 ```powershell
-Set-Location E:\PycharmProjects\FSE
 .\.venv\Scripts\python.exe -m evolution.rq2.cli --help
 ```
 
@@ -252,7 +255,7 @@ Alpha intervals resample whole cases, keeping their methods and ratings together
 
 ## Source changes and troubleshooting
 
-When source conversations change, rerun `prepare` for the affected cases, explicitly rerun their affected LLM experts, and regenerate reports. Review and update their human ratings manually as well: template export deliberately preserves existing human scores and does not decide whether a previous human judgment still applies to modified dialogue.
+When source conversations change, rerun `prepare` for the affected cases, explicitly rerun their affected LLM judges, and regenerate reports. Review and update their human ratings manually as well: template export deliberately preserves existing human scores and does not decide whether a previous human judgment still applies to modified dialogue.
 
 | Situation | Action |
 | --- | --- |

@@ -1,14 +1,12 @@
-# RQ3: Implementation Evaluation Infrastructure
+# RQ3: Downstream Implementation Evaluation
 
-This package evaluates delivered software against a reviewed requirements specification.
-It reads the selected Cases and their interview transcripts, turns each method's transcript
-into a reviewed SRS, runs one coding agent per implementation run in a container, collects
-build/run and scenario evidence, judges every requirement from that recorded evidence, and
-writes coverage, evidence and four-direction consistency views.
+RQ3 examines the observable scale of functional and boundary requirements obtained from interviews and the agreement of their judgments across repeated implementations. Each method's initial description and complete transcript are converted to the same SRS format, reviewed, and used for five independent implementations under a common coding configuration. Five Cases and four methods give 100 coding runs.
 
-Every stage is a separate command. Structured products are JSON/JSONL, human-edited tables
-are UTF-8 CSV, and reading views are Markdown. Commands exchange structured objects; they
-never parse terminal output of another stage and never start a later stage implicitly.
+The coding agent is mini-swe-agent 2.4.6 with `openai/gpt-5.4-mini-2026-03-17`, at most 200 steps and 3,600 seconds per run, and no container network. Its simple single-agent workflow helps reduce differences from tool interfaces and agent orchestration. Recorded implementation evidence is judged by `gpt-6-sol`; human-reviewed requirement judgments are the input to the paper analysis.
+
+The main scope combines functional requirements (FR), business rules and constraints (BR), and exception boundaries (EX). Observable and judgment-consistent requirement counts describe the downstream validation scope; five-run satisfaction counts describe requirements fulfilled in every independent implementation. The [paper analysis guide](../../analysis/rq3/README.md) defines these measures. Four-direction consistency views are retained as auxiliary qualitative evidence.
+
+Every stage has a separate command. Structured products are JSON/JSONL, human-edited tables are UTF-8 CSV, and reading views are Markdown. Commands exchange structured objects and run the requested stage.
 
 ## Workflow
 
@@ -63,7 +61,6 @@ errors, and no command falls back to another task.
 Run the commands in PowerShell from the repository root:
 
 ```powershell
-Set-Location E:\PycharmProjects\FSE
 .\.venv\Scripts\python.exe -m evolution.rq3.cli --help
 ```
 
@@ -404,7 +401,8 @@ Fill `decision` in `evaluations/judgment_review.csv` with `accept` or `revise`; 
 decision is still pending and the import skips it. The columns `status`, `evidence_ids`, `rationale`
 and `limitation` hold the candidate that `export-evaluation-review` wrote, so leave them unchanged.
 `accept` confirms that candidate as exported, and `revise` replaces it with `revised_status`,
-`revised_evidence_ids` and `revised_rationale`. A status of `observed_satisfied`,
+`revised_evidence_ids`, `revised_rationale` and `revised_limitation`. A blank
+`revised_limitation` clears the candidate's limitation for a revised judgment. A status of `observed_satisfied`,
 `observed_partial` or `observed_unsatisfied` must cite at least one evidence ID, and every cited ID
 must belong to the same Case, method, run and requirement scenario; `import-evaluation-review`
 rejects a row that cites an unknown or unrelated identifier. Re-running `evaluate-implementations`
@@ -413,7 +411,7 @@ before that run no longer describes the current candidates: export it again and 
 in the new table. An import of the outdated table is rejected, and `verify` reports
 `stale_judgment_review`.
 
-## 7. Record the four-direction conclusions
+## 7. Auxiliary four-direction conclusions
 
 ```powershell
 .\.venv\Scripts\python.exe -m evolution.rq3.cli export-consistency --config evolution/rq3/config/default.yaml --case-id PURE_002
@@ -426,6 +424,12 @@ in the new table. An import of the outdated table is rejected, and `verify` repo
 evidence that support it. An empty `consistency_status` stays pending and is never read as a
 negative conclusion. `import-consistency` checks the filled table against the cross-run matrix and
 rejects evidence from another Case, method or unreferenced run.
+
+In consistency views, `✓` marks `consistent_positive`. `✗` marks `consistent_negative` and
+`mixed`, and the full status label beside the symbol keeps stable non-fulfillment apart from
+cross-run divergence. `—` means evidence-limited or not applicable. Compare the actual behaviors
+and covered branches across runs, not just whether their requirement status labels match. An
+unobserved run does not by itself establish implementation variation.
 
 ## 8. Report
 
@@ -446,6 +450,31 @@ evaluable requirements without a judgment, unknown identifiers, broken reference
 that is not readable, pending records and a judgment review table that no longer describes the
 current candidates, prints one line per issue and returns 1 when it finds any. It is a read-only
 check.
+
+## 9. Paper analysis and visualization
+
+After importing the judgment reviews, reproduce the descriptive analysis from the repository root:
+
+```powershell
+python analysis/rq3/analyze_rq3.py
+```
+
+The analysis reads `reviewed_srs.json`, `scenarios.csv`, and `reviewed_judgments.json`. The paper scope is required functional requirements (FR), business rules/constraints (BR), and exception boundaries (EX). All evaluable quality/interface requirements remain in the source matrix and all-evaluable summaries.
+
+N is the requirement count; O counts requirements with at least one evaluable observation; R counts requirements with at least two; S counts requirements in R whose observed judgments agree across runs; conditional judgment agreement is A=S/R. Evaluable judgments are satisfied, partially satisfied, and unsatisfied. The figure separates the three consistent judgments from varying judgments. R5 requires observations in all five runs, S5 requires five identical judgments, and P5 requires satisfaction in all five runs.
+
+Counts are pooled across the five Cases; agreement is pooled S/R. Case-paired O/S differences and higher/equal/lower counts are calculated separately for each analysis scope. The paper uses descriptive statistics and complete five-run outcomes, presented in one functional/boundary figure and one four-method table. The auxiliary four-direction conclusions describe implementation behavior; the paper's S metric measures agreement of requirement judgments.
+
+The reviewed behavioral results as of 2026-10-03 are:
+
+| Method | N | O | R | S (A) | R5/S5/P5 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| LLMREI-long | 115 | 71 | 48 | 32 (66.7%) | 11/7/6 |
+| Hashimoto | 139 | 91 | 71 | 55 (77.5%) | 16/14/12 |
+| SparkMe | 405 | 162 | 112 | 82 (73.2%) | 28/16/11 |
+| ElicitMind | 443 | 213 | 143 | 101 (70.6%) | 48/28/13 |
+
+See [analysis definitions and source data](../../analysis/rq3/README.md), [Results text and caption](../../analysis/rq3/results.md), and [the Chinese paper narrative](../../analysis/rq3/answer_rq3.md).
 
 ## Exit codes and failures
 

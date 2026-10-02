@@ -57,6 +57,8 @@ sparkme/
 
 ---
 
+The software-requirements knowledge draws on Volere, IREB, and ISO/IEC/IEEE 29148, the same common basis used for ElicitMind's project-adaptive initialization. This baseline retains its own slot or agenda representation and decision mechanism.
+
 ## Software Requirements Topic Guide
 
 The requirements agenda in `data/configs/topics.json` preserves the official SparkMe scale with 10 core topics and 48 predefined subtopics. Each subtopic is one independently coverable interview concern:

@@ -18,9 +18,9 @@ The dataset is intended for project-level requirements interviewing rather than 
 
 The initial description normally identifies the project purpose or central business setting, principal actors when available, and a small number of core capabilities. It is not a summary of the complete source specification.
 
-## Planned Construction Method
+## Construction Method
 
-The construction plan consisted of four stages:
+The dataset was constructed in four stages:
 
 1. **Document screening.** Read every PURE document and retain it when an identifiable software system or software-supported setting, understandable project context, sufficient requirements material, and meaningful interview potential were present. Documents dominated by APIs, protocols, hardware parameters, low-level configuration, or implementation instructions were not suitable.
 2. **Initial requirements construction.** Read each retained source in full and create one concise English paragraph through source-grounded abstraction. Preserve supported project goals, business context, actors, and selected high-level capabilities. Omit most detailed workflows, exceptions, algorithms, interface parameters, technology versions, and implementation constraints.

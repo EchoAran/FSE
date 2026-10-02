@@ -9,11 +9,11 @@ Each of the 69 Cases contributes one four-rater mean per method and dimension.
 | Hashimoto | 2.326 | 1.819 | 2.138 |
 | LLMREI-long | 3.351 | 2.953 | 3.065 |
 | SparkMe | 2.638 | 2.924 | 2.478 |
-| Proposed method | 3.928 | 3.500 | 3.888 |
+| ElicitMind | 3.928 | 3.500 | 3.888 |
 
 ## Paired mean differences [95% CI]
 
-All contrasts are Proposed method minus baseline, paired within Case.
+All contrasts are ElicitMind minus baseline, paired within Case.
 
 | Baseline | Local Coherence | Transition Quality | Contingent Responsiveness |
 | --- | ---: | ---: | ---: |

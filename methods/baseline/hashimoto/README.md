@@ -72,6 +72,8 @@ hashimoto/
 └── README.md
 ```
 
+The software-requirements knowledge draws on Volere, IREB, and ISO/IEC/IEEE 29148, the same common basis used for ElicitMind's project-adaptive initialization. This baseline retains its own slot or agenda representation and decision mechanism.
+
 ## Quickstart
 
 ### Installation

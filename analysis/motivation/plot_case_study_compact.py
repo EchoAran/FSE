@@ -1,0 +1,424 @@
+"""
+Plot Script for Compact Motivation Case Study Figure (FSE Paper)
+Around "Later-Stated Requirements (LSRI) - Code Revision - Earlier Elicitation Opportunity"
+- Four-layer publication-ready layout (tight, polished, zero dead horizontal space)
+- Compressed width: 580px (eliminating right-side empty space in code blocks)
+- Dark terminal code block style preserved with syntax highlighting
+- Neutral card styling for Earlier Elicitation Opportunity (merged title and tag on the left, no colored header/left border)
+- Target height: 245px (~60-64 mm, strictly within 50-65 mm range)
+- Typography: Times New Roman for all text/headings; Consolas for code.
+- Outputs: HTML, Retina 2x PNG (1160 x 490), and single-page vector PDF.
+"""
+
+from __future__ import annotations
+import subprocess
+from pathlib import Path
+import pymupdf
+
+OUTPUT_DIR = Path(__file__).resolve().parent
+HTML_PATH = OUTPUT_DIR / "motivation_case_study_compact.html"
+PNG_PATH = OUTPUT_DIR / "motivation_case_study_compact.png"
+PDF_PATH = OUTPUT_DIR / "motivation_case_study_compact.pdf"
+
+EDGE_PATH = r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe"
+
+PAGE_WIDTH = 590
+PAGE_HEIGHT = 244
+
+HTML_CONTENT = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  @page {{
+    size: {PAGE_WIDTH}px {PAGE_HEIGHT}px;
+    margin: 0;
+  }}
+  html, body {{
+    width: {PAGE_WIDTH}px;
+    margin: 0;
+    padding: 5px 8px 3px 8px;
+    background-color: #ffffff;
+    color: #0f172a;
+    font-family: "Times New Roman", Times, Georgia, serif;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }}
+
+  /* Layer 1: Top Initial Request & Follow-up Context */
+  .layer-request {{
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 3px 7px;
+    margin-bottom: 3.5px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }}
+  .req-row {{
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    font-size: 11.5px;
+    line-height: 1.25;
+  }}
+  .lead-lbl {{
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: #1e293b;
+    flex-shrink: 0;
+  }}
+  .lead-ctx {{
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: #4338ca;
+    flex-shrink: 0;
+  }}
+  .req-txt {{
+    color: #0f172a;
+  }}
+  .ctx-txt {{
+    color: #334155;
+  }}
+
+  /* Layer 2: Side-by-side Code Comparison */
+  .code-grid {{
+    display: grid;
+    grid-template-columns: 1fr 1.18fr;
+    gap: 6px;
+    margin-bottom: 3.5px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }}
+  .code-col {{
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }}
+  .col-head {{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1px;
+  }}
+  .col-title {{
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+  }}
+  .badge-turn {{
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 0.5px 4.5px;
+    border-radius: 3px;
+    background-color: #f1f5f9;
+    color: #475569;
+    border: 1px solid #cbd5e1;
+  }}
+
+  /* Code Container (Dark Terminal Style) */
+  code, pre {{
+    font-family: Consolas, "JetBrains Mono", Courier New, monospace;
+  }}
+  .code-block {{
+    background-color: #0f172a;
+    color: #f8fafc;
+    border-radius: 4px;
+    padding: 4.5px 7px;
+    font-family: Consolas, "JetBrains Mono", Courier New, monospace;
+    font-size: 11.5px;
+    line-height: 1.28;
+    height: 104px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  }}
+  .code-block-initial {{
+    justify-content: center;
+    gap: 3px;
+  }}
+  .code-block-revised {{
+    justify-content: flex-start;
+    gap: 1px;
+  }}
+
+  /* Syntax Highlighting */
+  .code-kw {{ color: #f472b6; font-weight: 600; }}
+  .code-fn {{ color: #a78bfa; }}
+  .code-var {{ color: #38bdf8; }}
+  .code-sym {{ color: #fbbf24; }}
+
+  /* Selective Code Highlights */
+  .hl-unscoped-inline {{
+    background: rgba(244, 63, 94, 0.32);
+    border-bottom: 1.5px solid #f43f5e;
+    padding: 0.5px 3px;
+    border-radius: 2px;
+  }}
+  .hl-u1-inline {{
+    background: rgba(244, 63, 94, 0.32);
+    border-bottom: 1.5px solid #f43f5e;
+    padding: 0.5px 3px;
+    border-radius: 2px;
+  }}
+  .line-u1 {{
+    background: rgba(244, 63, 94, 0.20);
+    border-left: 2.5px solid #f43f5e;
+    padding: 0.5px 3px;
+    margin: 0.5px -3px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }}
+  .line-u2 {{
+    background: rgba(56, 189, 248, 0.18);
+    border-left: 2.5px solid #38bdf8;
+    padding: 0.5px 3px;
+    margin: 0.5px -3px;
+    border-radius: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }}
+
+  /* Compact Unit Chips */
+  .chip {{
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Times New Roman", Times, Georgia, serif;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #ffffff;
+    width: 13px;
+    height: 13px;
+    border-radius: 9999px;
+    line-height: 1;
+    flex-shrink: 0;
+  }}
+  .chip-red {{ background-color: #dc2626; }}
+  .chip-blue {{ background-color: #0284c7; }}
+
+  /* Layer 3: Two Clarified Requirements (System Behaviors) */
+  .reqs-grid {{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    margin-bottom: 3.5px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }}
+  .req-card {{
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 2.5px 6px;
+    font-size: 11.5px;
+    line-height: 1.25;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }}
+  .req-card strong {{
+    color: #0f172a;
+  }}
+
+  /* Layer 4: Earlier Elicitation Opportunity (Unified Neutral Card) */
+  .layer-elicitation {{
+    background-color: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 3px 7px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }}
+  .elicitation-title {{
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+  }}
+  .elicitation-list {{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }}
+  .elicitation-q {{
+    font-size: 11.5px;
+    font-style: italic;
+    color: #1e3a8a;
+    line-height: 1.25;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }}
+  .q-dot {{
+    display: inline-block;
+    width: 3.5px;
+    height: 3.5px;
+    border-radius: 9999px;
+    background-color: #64748b;
+    flex-shrink: 0;
+  }}
+</style>
+</head>
+<body>
+
+  <!-- Layer 1: Initial Request & Follow-up Context -->
+  <div class="layer-request">
+    <div class="req-row">
+      <span class="lead-lbl">INITIAL REQUEST &mdash;</span>
+      <span class="req-txt">Filter expenses by date range (default: current month's expenses).</span>
+    </div>
+    <div class="req-row">
+      <span class="lead-ctx">FOLLOW-UP CONTEXT &mdash;</span>
+      <span class="ctx-txt">The developer provides the existing controller.</span>
+    </div>
+  </div>
+
+  <!-- Layer 2: Side-by-Side Code Diff (Dark Terminal Style) -->
+  <div class="code-grid">
+    <!-- Left: Initial Solution (Turn 1) -->
+    <div class="code-col">
+      <div class="col-head">
+        <span class="col-title">Initial solution</span>
+        <span class="badge-turn">Turn 1</span>
+      </div>
+      <div class="code-block code-block-initial">
+        <div><span class="code-var">@expenses</span> = <span class="hl-unscoped-inline"><span class="code-fn">Expense</span>.<span class="code-fn">where</span></span>(</div>
+        <div>&nbsp;&nbsp;<span class="code-sym">datetime:</span> start_date..end_date</div>
+        <div>)</div>
+      </div>
+    </div>
+
+    <!-- Right: Revised Solution (Turn 2) -->
+    <div class="code-col">
+      <div class="col-head">
+        <span class="col-title">Revised solution</span>
+        <span class="badge-turn">Turn 2</span>
+      </div>
+      <div class="code-block code-block-revised">
+        <div class="line-u2">
+          <span><span class="code-kw">if</span> <span class="code-fn">user_signed_in?</span></span>
+          <span class="chip chip-blue">2</span>
+        </div>
+        <div class="line-u1">
+          <span>&nbsp;&nbsp;<span class="code-var">@expenses</span> = <span class="hl-u1-inline"><span class="code-var">current_user</span>.<span class="code-fn">expenses</span></span></span>
+          <span class="chip chip-red">1</span>
+        </div>
+        <div>&nbsp;&nbsp;&nbsp;&nbsp;.<span class="code-fn">where</span>(...).<span class="code-fn">order</span>(...)</div>
+        <div><span class="code-kw">else</span></div>
+        <div class="line-u2">
+          <span>&nbsp;&nbsp;<span class="code-var">@expenses</span> = <span class="code-fn">Expense</span>.<span class="code-fn">none</span></span>
+          <span class="chip chip-blue">2</span>
+        </div>
+        <div><span class="code-kw">end</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Layer 3: Two Clarified Requirements (Observable System Behaviors) -->
+  <div class="reqs-grid">
+    <div class="req-card">
+      <span class="chip chip-red">1</span>
+      <div><strong>User scope:</strong> List only the current user's expenses.</div>
+    </div>
+    <div class="req-card">
+      <span class="chip chip-blue">2</span>
+      <div><strong>Signed-out behavior:</strong> Show no expenses when signed out.</div>
+    </div>
+  </div>
+
+  <!-- Layer 4: Earlier Elicitation Opportunity (Unified Neutral Card) -->
+  <div class="layer-elicitation">
+    <div class="elicitation-title">Earlier elicitation opportunity</div>
+    <div class="elicitation-list">
+      <div class="elicitation-q">
+        <span class="q-dot"></span> Should expenses be restricted to the current user?
+      </div>
+      <div class="elicitation-q">
+        <span class="q-dot"></span> What should be returned when the user is not signed in?
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
+"""
+
+def main():
+    print(f"Writing compressed compact HTML to {HTML_PATH}...")
+    HTML_PATH.write_text(HTML_CONTENT, encoding="utf-8")
+
+    # Render PNG using Edge Headless with 2x scale
+    print("Rendering high-res PNG via Edge Headless...")
+    cmd_png = [
+        EDGE_PATH,
+        "--headless",
+        "--disable-gpu",
+        "--hide-scrollbars",
+        "--force-device-scale-factor=2",
+        f"--window-size={PAGE_WIDTH},{PAGE_HEIGHT}",
+        f"--screenshot={PNG_PATH.resolve()}",
+        str(HTML_PATH.resolve()),
+    ]
+    subprocess.run(cmd_png, check=True)
+    print(f"Saved PNG to {PNG_PATH}")
+
+    # Render vector PDF via Edge Headless
+    print("Rendering vector PDF via Edge Headless...")
+    cmd_pdf = [
+        EDGE_PATH,
+        "--headless",
+        "--disable-gpu",
+        "--no-pdf-header-footer",
+        f"--print-to-pdf={PDF_PATH.resolve()}",
+        str(HTML_PATH.resolve()),
+    ]
+    subprocess.run(cmd_pdf, check=True)
+
+    # Inspect PDF metrics
+    doc = pymupdf.open(PDF_PATH)
+    page_count = len(doc)
+    print(f"Generated PDF page count: {page_count}")
+    assert page_count == 1, f"Expected strictly 1 page, got {page_count} pages!"
+
+    p = doc[0]
+    max_y = 0
+    for d in p.get_drawings():
+        if d["rect"].width > 400 and d["rect"].height > 150:
+            continue
+        if d["rect"].y1 > max_y:
+            max_y = d["rect"].y1
+    for b in p.get_text("blocks"):
+        if b[3] > max_y:
+            max_y = b[3]
+
+    page_height_pt = p.rect.height
+    page_height_mm = page_height_pt * 25.4 / 72.0
+    content_max_y_mm = max_y * 25.4 / 72.0
+    bottom_gap_pt = page_height_pt - max_y
+    bottom_gap_px = bottom_gap_pt * 96.0 / 72.0
+
+    print(f"Width:           {PAGE_WIDTH} px ({p.rect.width:.1f} pt)")
+    print(f"Page Height:     {page_height_pt:.1f} pt ({PAGE_HEIGHT} px) -> {page_height_mm:.1f} mm")
+    print(f"Content Max Y:   {max_y:.1f} pt -> {content_max_y_mm:.1f} mm")
+    print(f"Bottom Gap:      {bottom_gap_pt:.1f} pt ({bottom_gap_px:.1f} px)")
+    print(f"[SUCCESS] Figure height is {page_height_mm:.1f} mm (within 50-65 mm target range) and strictly 1 page!")
+    doc.close()
+
+if __name__ == "__main__":
+    main()

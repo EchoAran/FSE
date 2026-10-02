@@ -3,7 +3,9 @@
 `interview` runs requirements elicitation interviews against cases from
 `dataset/cases.jsonl`. It provides one command line interface for
 `proposed_method`, `hashimoto`, `llmrei-long`, and `sparkme`, with either a simulated
-stakeholder or a human answering the interviewer's questions.
+interviewee or a human answering the interviewer's questions. `proposed_method` is the runtime identifier for ElicitMind.
+
+In the reported experiment, the simulator represents a stakeholder familiar with the project goals and business workflows who cooperates with the interview. It receives the project description, the most recent six question–answer pairs, and a shared role prompt. The PURE source documents establish the initial Case descriptions; they are not supplied as the simulator's full answer reference.
 
 ## Structure
 
@@ -13,7 +15,7 @@ interview/
 ├── cli.py             # Command line arguments and dispatch
 ├── cases/             # Case loading and validation
 ├── config/            # Simulated interviewee configuration
-├── interviewee/       # Stakeholder agent and prompt.txt template
+├── interviewee/       # Simulated interviewee and prompt.txt template
 ├── orchestrator/      # Dialogue loop and checkpoint recovery
 ├── adapters/          # Method registry and worker communication
 ├── workers/           # Isolated method execution and method-specific handlers
@@ -22,7 +24,7 @@ interview/
 
 Method implementations remain under `methods/`. The orchestrator loads a case,
 starts the selected method in a separate process using the same Python
-interpreter, and passes stakeholder answers to it until the method signals
+interpreter, and passes interviewee answers to it until the method signals
 completion. Each method owns its interview strategy, termination rules, and
 native state; the environment manages the shared dialogue and result layout.
 
@@ -44,12 +46,12 @@ method parameters according to its README.
 
 | Method ID | Configuration template | Default configuration | Method guide |
 | --- | --- | --- | --- |
-| `proposed_method` | `methods/proposed_method/configs/default.example.yaml` | `methods/proposed_method/configs/default.yaml` | [Proposed method](../methods/proposed_method/README.md) |
+| `proposed_method` | `methods/proposed_method/configs/default.example.yaml` | `methods/proposed_method/configs/default.yaml` | [ElicitMind](https://anonymous.4open.science/r/ElicitMind) |
 | `hashimoto` | `methods/baseline/hashimoto/config/default.example.yaml` | `methods/baseline/hashimoto/config/default.yaml` | [Hashimoto](../methods/baseline/hashimoto/README.md) |
 | `llmrei-long` | `methods/baseline/llmrei-long/config/default.example.yaml` | `methods/baseline/llmrei-long/config/default.yaml` | [LLMREI-long](../methods/baseline/llmrei-long/README.md) |
 | `sparkme` | `methods/baseline/sparkme/.env.example` | `methods/baseline/sparkme/.env` | [SparkMe](../methods/baseline/sparkme/README.md) |
 
-For example, to configure the proposed method in PowerShell:
+For example, to configure ElicitMind in PowerShell:
 
 ```powershell
 Copy-Item methods/proposed_method/configs/default.example.yaml methods/proposed_method/configs/default.yaml

@@ -62,6 +62,7 @@ JUDGMENT_COLUMNS = [
     "revised_status",
     "revised_evidence_ids",
     "revised_rationale",
+    "revised_limitation",
     "notes",
 ]
 
@@ -508,6 +509,7 @@ def export_judgment_review(
                 "revised_status": reviewed.get("revised_status", "").strip(),
                 "revised_evidence_ids": reviewed.get("revised_evidence_ids", "").strip(),
                 "revised_rationale": reviewed.get("revised_rationale", "").strip(),
+                "revised_limitation": reviewed.get("revised_limitation", "").strip(),
                 "notes": match.get("notes", "").strip(),
             }
         )
@@ -623,10 +625,12 @@ def import_judgment_review(
             status = row.get("status", "").strip()
             evidence_ids = split_id_list(row.get("evidence_ids", ""))
             rationale = row.get("rationale", "").strip()
+            limitation = row.get("limitation", "").strip()
         else:
             status = row.get("revised_status", "").strip()
             evidence_ids = split_id_list(row.get("revised_evidence_ids", ""))
             rationale = row.get("revised_rationale", "").strip()
+            limitation = row.get("revised_limitation", "").strip()
 
         if status not in JUDGMENT_STATUSES:
             raise ValueError(f"Row {index} has unknown status '{status}'.")
@@ -655,7 +659,7 @@ def import_judgment_review(
                 status=status,  # type: ignore[arg-type]
                 evidence_ids=evidence_ids,
                 rationale=rationale,
-                limitation=row.get("limitation", "").strip(),
+                limitation=limitation,
             )
         )
 
