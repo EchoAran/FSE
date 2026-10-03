@@ -104,7 +104,7 @@ def plot_outcomes(summary):
     fig.subplots_adjust(left=0.08, right=0.99, bottom=0.26, top=0.86, wspace=0.23)
     for ax, scope, title, limit, ticks in zip(
         axes, ("functional", "boundary"),
-        ("(a) Functional requirements", "(b) Rules and boundary constraints"),
+        ("(a) Functional requirements", "(b) Business rules and exception boundaries"),
         (125, 30), (range(0, 126, 25), range(0, 31, 5)),
     ):
         for m, method in enumerate(METHODS):
@@ -131,7 +131,7 @@ def plot_outcomes(summary):
     axes[0].set_ylabel("Requirements with repeated observations", fontsize=9)
     handles = [Patch(facecolor=color, edgecolor="white", hatch=hatch, label=label)
                for color, hatch, label in zip(COLORS, HATCHES,
-                   ("Consistently satisfied", "Consistently partial", "Consistently unsatisfied", "Varying labels"))]
+                   ("Consistently satisfied", "Consistently partially satisfied", "Consistently not satisfied", "Varying verdicts"))]
     fig.legend(handles=handles, loc="lower center", bbox_to_anchor=(0.5, 0.02),
                ncol=4, fontsize=7.5, handlelength=1.5, columnspacing=1.2)
     save_figure(fig, "rq3_implementation_outcomes")
